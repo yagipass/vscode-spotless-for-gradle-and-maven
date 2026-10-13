@@ -45,7 +45,7 @@ function mustRun(command, args, cwd = root) {
 }
 
 function unusualWorkspace() {
-  const dir = path.join(cache, "日本語 & 100% ^");
+  const dir = path.join(cache, "café & 100% ^");
   rmSync(dir, { recursive: true, force: true });
   cpSync(fixtures, path.join(dir, "fixtures"), {
     recursive: true,
