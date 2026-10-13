@@ -8,7 +8,12 @@ import {
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { findMavenExecutable, mavenArgs, runMaven } from "../../src/maven";
+import {
+  findMavenExecutable,
+  mavenArgs,
+  runMaven,
+  windowsCommandLine,
+} from "../../src/maven";
 
 let base: string;
 
@@ -44,7 +49,7 @@ describe("mavenArgs", () => {
       "-q",
       "-B",
       "-f",
-      "/repo/pom.xml",
+      "pom.xml",
       "-pl",
       "core/api",
       "--define",
@@ -76,6 +81,16 @@ describe("mavenArgs", () => {
     expect(args).not.toContain("-pl");
   });
 
+  it("names the POM relative to the build root, which is the working directory, because mvn.cmd expands % and ^ in a -f path a second time", () => {
+    const args = mavenArgs(
+      { tool: "maven", root: "C:\\100% ^", module: "C:\\100% ^" },
+      "C:\\100% ^\\src\\A.java",
+      "/ext.jar",
+      files,
+    );
+    expect(args.slice(2, 4)).toEqual(["-f", "pom.xml"]);
+  });
+
   it("never passes properties with -D, which mvnd 1.0 swallows and then runs a plain spotless:apply that rewrites the file on disk", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/repo", module: "/repo" },
@@ -84,6 +99,25 @@ describe("mavenArgs", () => {
       files,
     );
     expect(args.filter((arg) => arg.startsWith("-D"))).toEqual([]);
+  });
+});
+
+describe("windowsCommandLine", () => {
+  it("quotes every argument and escapes cmd.exe metacharacters, so a path with spaces, &, % or ^ reaches Maven unchanged instead of splitting the command or expanding a variable", () => {
+    expect(
+      windowsCommandLine("C:\\My Projects\\app\\mvnw.cmd", [
+        "-q",
+        "spotlessIdeHook=C:\\日本語 & 100% ^\\A.java",
+      ]),
+    ).toBe(
+      'C:\\My^ Projects\\app\\mvnw.cmd ^"-q^" ^"spotlessIdeHook=C:\\日本語^ ^&^ 100^%^ ^^\\A.java^"',
+    );
+  });
+
+  it("doubles the backslashes before a quote, so a trailing backslash does not escape the closing quote", () => {
+    expect(windowsCommandLine("mvn.cmd", ["C:\\dir\\", 'a\\"b'])).toBe(
+      'mvn.cmd ^"C:\\dir\\\\^" ^"a\\\\\\^"b^"',
+    );
   });
 });
 

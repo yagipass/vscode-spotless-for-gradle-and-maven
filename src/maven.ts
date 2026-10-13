@@ -15,6 +15,7 @@ export interface MavenOptions {
 }
 
 const windows = process.platform === "win32";
+const cmdMetaCharacters = /([()\][%!^"`<>&|;, *?])/g;
 
 export function findMavenExecutable(
   root: string,
@@ -53,7 +54,7 @@ export function mavenArgs(
     "-q",
     "-B",
     "-f",
-    path.join(build.root, "pom.xml"),
+    "pom.xml",
     ...(module === "" ? ["-N"] : ["-pl", module]),
     ...properties.flatMap((property) => ["--define", property]),
     "com.diffplug.spotless:spotless-maven-plugin:apply",
@@ -91,6 +92,18 @@ export async function runMaven(
   };
 }
 
+export function windowsCommandLine(
+  executable: string,
+  args: readonly string[],
+): string {
+  const escape = (text: string) => text.replace(cmdMetaCharacters, "^$1");
+  const quote = (arg: string) =>
+    `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, "$1$1")}"`;
+  return [escape(executable), ...args.map((arg) => escape(quote(arg)))].join(
+    " ",
+  );
+}
+
 function runProcess(
   executable: string,
   args: string[],
@@ -99,13 +112,33 @@ function runProcess(
 ): Promise<{ exitCode: number; output: string }> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
-    const child = spawn(executable, args, {
+    const [command, commandArgs] = windows
+      ? [
+          process.env["ComSpec"] ?? "cmd.exe",
+          ["/d", "/s", "/c", `"${windowsCommandLine(executable, args)}"`],
+        ]
+      : [executable, args];
+    const child = spawn(command, commandArgs, {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      shell: windows,
       windowsHide: true,
+      windowsVerbatimArguments: windows,
     });
-    const interrupt = () => child.kill("SIGINT");
+    const interrupt = () => {
+      if (!windows) {
+        child.kill("SIGINT");
+      } else if (child.pid !== undefined) {
+        spawn(
+          path.join(
+            process.env["SystemRoot"] ?? "C:\\Windows",
+            "System32",
+            "taskkill.exe",
+          ),
+          ["/pid", String(child.pid), "/t", "/f"],
+          { stdio: "ignore", windowsHide: true },
+        ).on("error", () => undefined);
+      }
+    };
     signal.addEventListener("abort", interrupt, { once: true });
     const output: Buffer[] = [];
     child.stdout.on("data", (chunk: Buffer) => output.push(chunk));
