@@ -78,35 +78,47 @@ jobs:
       - if: runner.os == 'Windows'
         continue-on-error: true
         run: |
-          mkdir -p .cache
-          cat > .cache/diag.cjs <<'JS'
-          const { runTests, downloadAndUnzipVSCode } = require("@vscode/test-electron");
+          mkdir -p .cache/diag
+          cat > .cache/diag/dummy.test.js <<'JS'
+          suite("dummy", () => test("runs", () => {}));
+          JS
+          cat > .cache/diag/run.cjs <<'JS'
+          const { runTests } = require("@vscode/test-electron");
+          const { spawnSync } = require("node:child_process");
           const fs = require("node:fs");
           const os = require("node:os");
           const path = require("node:path");
+          const root = process.cwd();
+          const ws = path.join(root, "test", "integration", "fixtures", "gradle");
+          const index = path.join(root, ".cache", "diag", "index.js");
+          fs.writeFileSync(index, "exports.run = async () => { console.log('TESTS RAN'); };");
+          const log = ["--log", "yagipass.vscode-spotless-for-gradle-and-maven:debug"];
+          const ud = ["--user-data-dir", path.join(os.tmpdir(), "spotless-vscode-test")];
+          const lp = ["--logsPath", path.join(root, ".cache", "logs", "diag")];
           (async () => {
-            const exe = await downloadAndUnzipVSCode("1.140.0");
-            console.log("exe", exe, fs.readdirSync(path.dirname(exe)));
-            console.log("tmpdir", os.tmpdir(), "realpath", fs.realpathSync.native(os.tmpdir()));
-            const dir = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP, "t-"));
-            fs.writeFileSync(path.join(dir, "index.js"), "exports.run = async () => { console.log('TESTS RAN'); };");
-            const variants = {
-              none: [],
-              userDataShort: ["--user-data-dir", path.join(os.tmpdir(), "ud-short")],
-              userDataLong: ["--user-data-dir", path.join(process.env.RUNNER_TEMP, "ud-long")],
-              logsPath: ["--logsPath", path.join(process.env.RUNNER_TEMP, "logs")],
-            };
-            for (const [name, launchArgs] of Object.entries(variants)) {
+            for (const [name, launchArgs] of Object.entries({ ws: [ws], log, all: [...ud, ...lp, ...log, ws] })) {
               try {
-                const code = await runTests({ version: "1.140.0", extensionDevelopmentPath: process.cwd(), extensionTestsPath: path.join(dir, "index.js"), launchArgs });
-                console.log("RESULT", name, "exit", code);
+                console.log("RESULT", name, "exit", await runTests({ version: "1.140.0", extensionDevelopmentPath: root, extensionTestsPath: index, launchArgs }));
               } catch (e) {
                 console.log("RESULT", name, "error", String(e));
               }
             }
+            const base = { version: "1.140.0", files: ".cache/diag/dummy.test.js", workspaceFolder: "test/integration/fixtures/gradle", installExtensions: ["vscjava.vscode-gradle@3.18.0"], launchArgs: [...ud, ...lp, ...log], mocha: { ui: "tdd" } };
+            const variants = {
+              cliFull: base,
+              cliNoExt: { ...base, installExtensions: [] },
+              cliNoWs: { ...base, workspaceFolder: undefined },
+              cliNoArgs: { ...base, launchArgs: [] },
+            };
+            for (const [name, cfg] of Object.entries(variants)) {
+              const file = path.join(root, `.vscode-test.${name}.mjs`);
+              fs.writeFileSync(file, `import { defineConfig } from "@vscode/test-cli";\nexport default defineConfig(${JSON.stringify(cfg)});\n`);
+              const r = spawnSync(`pnpm exec vscode-test --config "${file}"`, { shell: true, encoding: "utf8" });
+              console.log("RESULT", name, "status", r.status, r.stdout.slice(-1500), r.stderr.slice(-1500));
+            }
           })();
           JS
-          node .cache/diag.cjs
+          node .cache/diag/run.cjs
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
