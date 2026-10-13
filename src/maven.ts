@@ -118,8 +118,13 @@ function runProcess(
           ["/d", "/s", "/c", `"${windowsCommandLine(executable, args)}"`],
         ]
       : [executable, args];
+    const env =
+      windows && args.some((arg) => /\P{ASCII}/u.test(arg))
+        ? { ...process.env, MVND_CLIENT: "jvm" }
+        : process.env;
     const child = spawn(command, commandArgs, {
       cwd,
+      env,
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
       windowsVerbatimArguments: windows,
