@@ -77,20 +77,36 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - if: runner.os == 'Windows'
         continue-on-error: true
-        env:
-          ELECTRON_ENABLE_LOGGING: 1
-          ELECTRON_ENABLE_STACK_DUMPING: 1
         run: |
-          pnpm build && pnpm exec tsc -p test/integration
-          dir="$PWD/.cache/日本語 & 100% ^"
-          rm -rf "$dir" && mkdir -p "$dir/tmp" && cp -r test/integration/fixtures "$dir/fixtures"
-          special="$(cygpath -w "$dir")"
-          echo "== A plain"
-          timeout 300 pnpm exec vscode-test --label gradle || echo "A exit=$?"
-          echo "== B temp"
-          TEMP="$special\\tmp" TMP="$special\\tmp" timeout 300 pnpm exec vscode-test --label gradle || echo "B exit=$?"
-          echo "== C workspace"
-          SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_FIXTURES="$special\\fixtures" timeout 300 pnpm exec vscode-test --label gradle || echo "C exit=$?"
+          mkdir -p .cache
+          cat > .cache/diag.cjs <<'JS'
+          const { runTests, downloadAndUnzipVSCode } = require("@vscode/test-electron");
+          const fs = require("node:fs");
+          const os = require("node:os");
+          const path = require("node:path");
+          (async () => {
+            const exe = await downloadAndUnzipVSCode("1.140.0");
+            console.log("exe", exe, fs.readdirSync(path.dirname(exe)));
+            console.log("tmpdir", os.tmpdir(), "realpath", fs.realpathSync.native(os.tmpdir()));
+            const dir = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP, "t-"));
+            fs.writeFileSync(path.join(dir, "index.js"), "exports.run = async () => { console.log('TESTS RAN'); };");
+            const variants = {
+              none: [],
+              userDataShort: ["--user-data-dir", path.join(os.tmpdir(), "ud-short")],
+              userDataLong: ["--user-data-dir", path.join(process.env.RUNNER_TEMP, "ud-long")],
+              logsPath: ["--logsPath", path.join(process.env.RUNNER_TEMP, "logs")],
+            };
+            for (const [name, launchArgs] of Object.entries(variants)) {
+              try {
+                const code = await runTests({ version: "1.140.0", extensionDevelopmentPath: process.cwd(), extensionTestsPath: path.join(dir, "index.js"), launchArgs });
+                console.log("RESULT", name, "exit", code);
+              } catch (e) {
+                console.log("RESULT", name, "error", String(e));
+              }
+            }
+          })();
+          JS
+          node .cache/diag.cjs
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
