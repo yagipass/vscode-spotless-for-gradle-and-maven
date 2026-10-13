@@ -1,5 +1,10 @@
 # Spotless for Gradle and Maven
 
+[![VS Marketplace](https://vsmarketplacebadges.dev/version-short/yagipass.vscode-spotless-for-gradle-and-maven.svg)](https://marketplace.visualstudio.com/items?itemName=yagipass.vscode-spotless-for-gradle-and-maven)
+[![Open VSX](https://img.shields.io/open-vsx/v/yagipass/vscode-spotless-for-gradle-and-maven)](https://open-vsx.org/extension/yagipass/vscode-spotless-for-gradle-and-maven)
+[![build](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/actions/workflows/build.yml/badge.svg)](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/yagipass/vscode-spotless-for-gradle-and-maven)](LICENSE)
+
 Formats a file on save with the [Spotless](https://github.com/diffplug/spotless) configuration of its Gradle or Maven build.
 
 ![Saving a Java file formats it with Spotless](images/format-on-save.gif)
