@@ -31,21 +31,61 @@ jobs:
       - run: pnpm test:unit
 
   integration:
-    runs-on: ubuntu-latest
+    name: integration (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-latest' && 'bash' || 'nix develop --command bash -e {0}' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+      - if: runner.os != 'Windows'
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - if: runner.os != 'Windows'
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+      - if: runner.os == 'Windows'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - if: runner.os == 'Windows'
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - if: runner.os == 'Windows'
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MVND_VERSION: 1.0.6
+          MVND_SHA512: 4dd97b1f26525055cec960fb5b953b70d1e6606f96f5b096efa932754fd3e9d0238e00ca97779368f29cb751f1776445c45da618ea8d0d84692c3b936087309f
+        run: |
+          $name = "maven-mvnd-$env:MVND_VERSION-windows-amd64"
+          $zip = Join-Path $env:RUNNER_TEMP "$name.zip"
+          Invoke-WebRequest "https://github.com/apache/maven-mvnd/releases/download/$env:MVND_VERSION/$name.zip" -OutFile $zip
+          if ((Get-FileHash $zip -Algorithm SHA512).Hash -ne $env:MVND_SHA512) { throw "$zip does not match its SHA-512" }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          [System.Text.Encoding]::Default | Select-Object CodePage, EncodingName
+          Get-WinSystemLocale
+          git config --show-origin --get-all core.autocrlf
+          git ls-files --eol test/integration/fixtures/maven/single
       - run: pnpm install --frozen-lockfile
-      - run: xvfb-run -a pnpm test:integration
+      - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: integration-logs
+          name: integration-logs-${{ runner.os }}
           path: .cache/logs
           include-hidden-files: true

@@ -1,8 +1,10 @@
 import * as assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import { setTimeout } from "node:timers/promises";
+import { promisify } from "node:util";
 import * as vscode from "vscode";
 
 export function workspacePath(...segments: string[]): string {
@@ -133,6 +135,57 @@ export async function expectLog(pattern: RegExp): Promise<void> {
     await setTimeout(100);
   }
   assert.fail(`The log does not match ${String(pattern)}:\n${spotlessLog()}`);
+}
+
+export async function waitUntil(
+  condition: () => boolean,
+  message: string,
+): Promise<void> {
+  for (let attempt = 0; attempt < 1200; attempt++) {
+    if (condition()) {
+      return;
+    }
+    await setTimeout(100);
+  }
+  assert.fail(message);
+}
+
+export async function cancelSave(saving: Thenable<boolean>): Promise<void> {
+  const pending = Symbol("pending");
+  for (let attempt = 0; attempt < 300; attempt++) {
+    await vscode.commands.executeCommand("notification.acceptPrimaryAction");
+    if ((await Promise.race([saving, setTimeout(100, pending)])) !== pending) {
+      return;
+    }
+  }
+  assert.fail("VS Code did not offer to cancel the save");
+}
+
+async function commandLines(): Promise<string[]> {
+  const { stdout } =
+    process.platform === "win32"
+      ? await promisify(execFile)("powershell.exe", [
+          "-NoProfile",
+          "-NonInteractive",
+          "-Command",
+          "(Get-CimInstance Win32_Process).CommandLine",
+        ])
+      : await promisify(execFile)("ps", ["-A", "-ww", "-o", "args="]);
+  return stdout.split(/\r?\n/);
+}
+
+export async function expectNoProcess(marker: string): Promise<void> {
+  let running: string[] = [];
+  for (let attempt = 0; attempt < 50; attempt++) {
+    running = (await commandLines()).filter((line) => line.includes(marker));
+    if (running.length === 0) {
+      return;
+    }
+    await setTimeout(100);
+  }
+  assert.fail(
+    `Processes with ${marker} in their command line are still running:\n${running.join("\n")}`,
+  );
 }
 
 export async function expectFormattedOnSave(

@@ -5,12 +5,19 @@ import process from "node:process";
 import { defineConfig } from "@vscode/test-cli";
 
 const root = import.meta.dirname;
-const fixtures = path.join(root, "test", "integration", "fixtures");
+const fixtures =
+  process.env.SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_FIXTURES ??
+  path.join(root, "test", "integration", "fixtures");
 const userDataDir = path.join(os.tmpdir(), "spotless-vscode-test");
+const mvnd = process.platform === "win32" ? "mvnd.cmd" : "mvnd";
 
-const pathWithoutMvnd = (process.env.PATH ?? "")
+const pathKey =
+  Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ??
+  "PATH";
+
+const pathWithoutMvnd = (process.env[pathKey] ?? "")
   .split(path.delimiter)
-  .filter((dir) => !existsSync(path.join(dir, "mvnd")))
+  .filter((dir) => !existsSync(path.join(dir, mvnd)))
   .join(path.delimiter);
 
 function config(label, test, workspace, env = {}) {
@@ -41,6 +48,6 @@ export default defineConfig([
   }),
   config("maven-mvnw", "maven", "maven", {
     SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_MAVEN: "mvnw",
-    PATH: pathWithoutMvnd,
+    [pathKey]: pathWithoutMvnd,
   }),
 ]);
