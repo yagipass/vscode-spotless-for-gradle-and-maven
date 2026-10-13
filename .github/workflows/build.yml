@@ -75,6 +75,22 @@ jobs:
           Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
           Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
       - run: pnpm install --frozen-lockfile
+      - if: runner.os == 'Windows'
+        continue-on-error: true
+        env:
+          ELECTRON_ENABLE_LOGGING: 1
+          ELECTRON_ENABLE_STACK_DUMPING: 1
+        run: |
+          pnpm build && pnpm exec tsc -p test/integration
+          dir="$PWD/.cache/日本語 & 100% ^"
+          rm -rf "$dir" && mkdir -p "$dir/tmp" && cp -r test/integration/fixtures "$dir/fixtures"
+          special="$(cygpath -w "$dir")"
+          echo "== A plain"
+          timeout 300 pnpm exec vscode-test --label gradle || echo "A exit=$?"
+          echo "== B temp"
+          TEMP="$special\\tmp" TMP="$special\\tmp" timeout 300 pnpm exec vscode-test --label gradle || echo "B exit=$?"
+          echo "== C workspace"
+          SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_FIXTURES="$special\\fixtures" timeout 300 pnpm exec vscode-test --label gradle || echo "C exit=$?"
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
