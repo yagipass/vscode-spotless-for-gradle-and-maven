@@ -36,9 +36,9 @@ pnpm test:integration
 
 `pnpm sync:runtime-types` checks that `@types/node` and `@types/vscode` match the oldest VS Code that `engines.vscode` allows, so that `pnpm typecheck` rejects APIs that version lacks.
 
-`pnpm test:integration` downloads VS Code and the Gradle for Java extension, then formats the projects in `test/integration/fixtures` with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`. On Windows, it opens a copy of the fixtures in `.cache/café & 100% ^/` and uses that folder for temporary files too, so that paths with non-ASCII characters, spaces, `&`, `%` and `^` are covered.
+`pnpm test:integration` downloads VS Code and the Gradle for Java extension, copies the projects in `test/integration/fixtures` to `.cache/fixtures/`, then formats them with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`. On Windows, it opens a further copy in `.cache/café & 100% ^/` and uses that folder for temporary files too, so that paths with non-ASCII characters, spaces, `&`, `%` and `^` are covered.
 
-The VS Code and Gradle for Java versions come from the `latest` profile in `test/integration/profiles.mjs`. To run on the oldest VS Code that `engines.vscode` allows, as CI also does, set `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest`.
+The fixtures use the latest Spotless plugins, and the `latest` profile in `test/integration/profiles.mjs` sets the VS Code and Gradle for Java versions. CI also runs the `oldest` profile, which `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest` selects. It runs the oldest VS Code that `engines.vscode` allows, and writes the oldest Spotless plugins that the README supports into the copied fixtures.
 
 ## Changing the minimum VS Code version
 
