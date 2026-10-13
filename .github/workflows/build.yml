@@ -65,7 +65,7 @@ jobs:
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - if: runner.os == 'Windows'
         shell: pwsh
         env:
@@ -77,7 +77,7 @@ jobs:
           Invoke-WebRequest "https://github.com/apache/maven-mvnd/releases/download/$env:MVND_VERSION/$name.zip" -OutFile $zip
           if ((Get-FileHash $zip -Algorithm SHA512).Hash -ne $env:MVND_SHA512) { throw "$zip does not match its SHA-512" }
           Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
-          Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
+          "MVND_HOME_$($env:MVND_VERSION.Replace('.', '_'))=$(Join-Path $env:RUNNER_TEMP $name)" | Add-Content $env:GITHUB_ENV
       - run: pnpm install --frozen-lockfile
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
         env:

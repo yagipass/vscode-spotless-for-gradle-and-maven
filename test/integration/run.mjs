@@ -17,8 +17,42 @@ const cache = path.join(root, ".cache");
 const fixtures = path.join(import.meta.dirname, "fixtures");
 const prepared = path.join(cache, "fixtures");
 const windows = process.platform === "win32";
+const pathKey =
+  Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ??
+  "PATH";
+
+function javaHome() {
+  const home = process.env[`JAVA_HOME_${profile.jdk}`] ?? process.env.JAVA_HOME;
+  const release =
+    home !== undefined && existsSync(path.join(home, "release"))
+      ? readFileSync(path.join(home, "release"), "utf8")
+      : "";
+  if (Number(/^JAVA_VERSION="(\d+)/m.exec(release)?.[1]) !== profile.jdk) {
+    throw new Error(
+      `JDK ${profile.jdk} not found: set JAVA_HOME_${profile.jdk} or JAVA_HOME to it, not ${home}`,
+    );
+  }
+  return home;
+}
+
+function mvndHome() {
+  const name = `MVND_HOME_${profile.mvnd.replaceAll(".", "_")}`;
+  const home = process.env[name];
+  if (home === undefined) {
+    throw new Error(`mvnd ${profile.mvnd} not found: set ${name} to it`);
+  }
+  return home;
+}
+
+const java = javaHome();
 const env = {
   ...process.env,
+  JAVA_HOME: java,
+  [pathKey]: [
+    path.join(java, "bin"),
+    path.join(mvndHome(), "bin"),
+    process.env[pathKey],
+  ].join(path.delimiter),
   GRADLE_USER_HOME: path.join(cache, "gradle"),
   MAVEN_USER_HOME: path.join(cache, "maven-user-home"),
   MVND_DAEMON_STORAGE: path.join(cache, "mvnd"),
@@ -88,6 +122,32 @@ function copyFixtures(from, to) {
 }
 
 function applyProfile(dir) {
+  if (profile.gradle !== undefined) {
+    rewrite(
+      filesNamed(path.join(dir, "gradle"), "gradle-wrapper.properties"),
+      /(?<=^distributionUrl=.*\/gradle-)[^/]+(?=-bin\.zip$)/gm,
+      profile.gradle,
+    );
+  }
+  if (profile.maven !== undefined) {
+    rewrite(
+      filesNamed(path.join(dir, "maven"), "maven-wrapper.properties"),
+      /(?<=^distributionUrl=.*\/apache-maven\/)[^/]+(?=\/)|(?<=^distributionUrl=.*\/apache-maven-)[^/]+(?=-bin\.zip$)/gm,
+      profile.maven,
+    );
+  }
+  if (profile.googleJavaFormat !== undefined) {
+    rewrite(
+      filesNamed(path.join(dir, "gradle"), "build.gradle"),
+      /(?<=googleJavaFormat\(')[^']+/g,
+      profile.googleJavaFormat,
+    );
+    rewrite(
+      filesNamed(path.join(dir, "maven"), "pom.xml"),
+      /(?<=<googleJavaFormat>\s*<version>)[^<]+/g,
+      profile.googleJavaFormat,
+    );
+  }
   if (profile.spotlessGradle !== undefined) {
     rewrite(
       filesNamed(path.join(dir, "gradle"), "build.gradle"),

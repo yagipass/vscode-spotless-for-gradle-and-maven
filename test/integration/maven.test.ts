@@ -35,7 +35,7 @@ suite(`Maven single module (${expectedExecutable})`, () => {
     uncoveredSuffix: "<!--   not a Spotless target   -->\n",
   });
 
-  test(`runs ${expectedExecutable}, so both the daemon and a pinned Maven 3.10 wrapper are covered`, async () => {
+  test(`runs ${expectedExecutable}, so both the daemon and the Maven that the wrapper pins are covered`, async () => {
     assert.ok(["mvnd", "mvnw"].includes(expectedExecutable));
     await expectFormattedOnSave(sourceDir("single"), "TmpExecutable");
     await expectLog(

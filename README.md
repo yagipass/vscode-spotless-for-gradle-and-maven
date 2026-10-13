@@ -6,8 +6,9 @@ It runs the real Spotless Gradle or Maven plugin on the unsaved buffer, so every
 
 ## Requirements
 
-- Gradle builds: the [Gradle for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-gradle) extension.
-- Maven builds: [mvnd](https://github.com/apache/maven-mvnd) is recommended (about 0.3 s per save, against about 1 s with `mvn` or `mvnw`).
+- JDK 17 or later.
+- Gradle builds: Gradle 8.1 or later and the [Gradle for Java](https://marketplace.visualstudio.com/items?itemName=vscjava.vscode-gradle) extension.
+- Maven builds: Maven 3.6.3 or a later 3.x. [mvnd](https://github.com/apache/maven-mvnd) 1.0.3 or a later 1.x is recommended (about 0.3 s per save, against about 1 s with `mvn` or `mvnw`).
 
 ## Usage
 
