@@ -31,11 +31,15 @@ jobs:
       - run: pnpm test:unit
 
   integration:
-    name: integration (${{ matrix.os }})
+    name: integration (${{ matrix.profile == 'latest' && matrix.os || format('{0}, {1}', matrix.os, matrix.profile) }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        profile: [latest]
+        include:
+          - os: ubuntu-latest
+            profile: oldest
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     defaults:
@@ -76,9 +80,11 @@ jobs:
           Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
       - run: pnpm install --frozen-lockfile
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
+        env:
+          SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE: ${{ matrix.profile }}
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: integration-logs-${{ runner.os }}
+          name: integration-logs-${{ runner.os }}-${{ matrix.profile }}
           path: .cache/logs
           include-hidden-files: true

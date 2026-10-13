@@ -127,6 +127,10 @@ function spotlessLog(): string {
   return file === undefined ? "" : readFileSync(path.join(dir, file), "utf8");
 }
 
+export function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function expectLog(pattern: RegExp): Promise<void> {
   for (let attempt = 0; attempt < 50; attempt++) {
     if (pattern.test(spotlessLog())) {
@@ -250,7 +254,7 @@ export function commonSuite(options: {
     await save(document);
     assert.equal(document.getText(), edited);
     await expectLog(
-      new RegExp(`${RegExp.escape(path.basename(uri.fsPath))}: notCovered`),
+      new RegExp(`${escapeRegExp(path.basename(uri.fsPath))}: notCovered`),
     );
   });
 

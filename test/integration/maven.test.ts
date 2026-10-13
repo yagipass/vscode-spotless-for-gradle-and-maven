@@ -7,6 +7,7 @@ import {
   cancelSave,
   commonSuite,
   createFile,
+  escapeRegExp,
   expectFormattedOnSave,
   expectLog,
   expectNoProcess,
@@ -39,7 +40,7 @@ suite(`Maven single module (${expectedExecutable})`, () => {
     await expectFormattedOnSave(sourceDir("single"), "TmpExecutable");
     await expectLog(
       new RegExp(
-        `TmpExecutable\\.java: dirty\\n.*${RegExp.escape(path.sep + expectedFileName)} -q -B`,
+        `TmpExecutable\\.java: dirty\\n.*${escapeRegExp(path.sep + expectedFileName)} -q -B`,
       ),
     );
   });
