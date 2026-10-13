@@ -15,13 +15,23 @@ if (minimumVSCode === undefined) {
   );
 }
 
-const latest = { vscode: "1.140.0", gradleForJava: "3.18.0" };
+const latest = {
+  vscode: "1.140.0",
+  gradleForJava: "3.18.0",
+  jdk: 25,
+  mvnd: "1.0.6",
+};
 
 const profiles = {
   latest,
   oldest: {
     ...latest,
     vscode: minimumVSCode,
+    jdk: 17,
+    mvnd: "1.0.3",
+    gradle: "8.1",
+    maven: "3.6.3",
+    googleJavaFormat: "1.28.0",
     spotlessGradle: "8.7.0",
     spotlessMaven: "2.40.0",
   },
