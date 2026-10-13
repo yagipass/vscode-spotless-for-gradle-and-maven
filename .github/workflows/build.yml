@@ -138,4 +138,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
       - run: pnpm exec vsce publish --azure-credential --skip-duplicate --packagePath ./*.vsix
+      - run: pnpm exec ovsx publish ./*.vsix --skip-duplicate
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
       - run: gh release edit "$TAG" --draft=false
