@@ -1,23 +1,10 @@
 # Contributing
 
-## Requirements
+## Setup
 
-- Node.js 24 and pnpm
-- JDK 21 and Maven (`mvn`)
-- For the integration tests only: the JDKs and [mvnd](https://github.com/apache/maven-mvnd) releases that `test/integration/profiles.mjs` names, in `JAVA_HOME_<major>` and `MVND_HOME_<version>` with `_` for `.`, such as `JAVA_HOME_17` and `MVND_HOME_1_0_3`
+`nix develop` (or `direnv allow`) provides every tool. Without Nix, install Node.js 24, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. Then run `pnpm install`.
 
-With Nix, `nix develop` (or `direnv allow`) provides all of them.
-
-## Build
-
-```sh
-pnpm install
-pnpm build
-```
-
-`pnpm build` bundles the extension and builds the Maven extension in `inject/maven`, both into `dist/`. `pnpm watch` rebuilds the TypeScript on change.
-
-To try it in VS Code, package and install it:
+## Try it in VS Code
 
 ```sh
 pnpm package
@@ -34,26 +21,8 @@ pnpm test:unit
 pnpm test:integration
 ```
 
-`pnpm sync:runtime-types` checks that `@types/node` and `@types/vscode` match the oldest VS Code that `engines.vscode` allows, so that `pnpm typecheck` rejects APIs that version lacks.
+`pnpm test:integration` writes VS Code logs to `.cache/logs/`. It takes:
 
-`pnpm test:integration` downloads VS Code and the Gradle for Java extension, copies the projects in `test/integration/fixtures` to `.cache/fixtures/`, then formats them with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`. On Windows, it opens a further copy in `.cache/café & 100% ^/` and uses that folder for temporary files too, so that paths with non-ASCII characters, spaces, `&`, `%` and `^` are covered.
-
-The fixtures use the latest Spotless plugins, Gradle and Maven, and the `latest` profile in `test/integration/profiles.mjs` sets the VS Code, Gradle for Java, JDK and mvnd versions. CI also runs the `oldest` profile, which `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest` selects. It runs the oldest versions that the README supports: the VS Code that `engines.vscode` starts at, the oldest Gradle for Java, JDK and mvnd, and, written into the copied fixtures, the oldest Gradle, Maven and Spotless plugins, with a google-java-format that runs on that JDK.
-
-The `gradle-for-java` workflow runs the Gradle tests every day with the newest stable and the newest pre-release Gradle for Java on the Marketplace, so a release that breaks formatting fails there without waiting for the `latest` profile to catch up, and a pre-release fails it before the stable release. To run the same tests locally, set `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA`, which overrides the profile's Gradle for Java version:
-
-```sh
-SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA=$(node scripts/newest-gradle-for-java.mjs pre-release) pnpm test:integration --label gradle
-```
-
-The Gradle fixtures set `org.gradle.warning.mode=fail`, so a formatting build that uses a deprecated Gradle feature fails the tests while the feature still works. `Spotless for Gradle and Maven.log` in `.cache/logs/` names the deprecation.
-
-## Changing the minimum VS Code version
-
-Edit `engines.vscode` in `package.json`, then run:
-
-```sh
-pnpm sync:runtime-types --fix
-```
-
-It installs the matching `@types/node` and `@types/vscode` and updates the `@types/node` range that Dependabot ignores. Do not update these types by hand. The new minimum must be a version that `@types/vscode` was published for.
+- `--label gradle` to run only the Gradle tests
+- `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest` to use the oldest supported versions in `test/integration/profiles.mjs`
+- `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA=<version>` to use another Gradle for Java; `node scripts/newest-gradle-for-java.mjs stable` or `pre-release` prints the newest
