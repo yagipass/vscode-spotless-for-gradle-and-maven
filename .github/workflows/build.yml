@@ -79,12 +79,8 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p .cache/diag
-          cat > .cache/diag/dummy.test.js <<'JS'
-          suite("dummy", () => test("runs", () => {}));
-          JS
           cat > .cache/diag/run.cjs <<'JS'
           const { runTests } = require("@vscode/test-electron");
-          const { spawnSync } = require("node:child_process");
           const fs = require("node:fs");
           const os = require("node:os");
           const path = require("node:path");
@@ -94,27 +90,25 @@ jobs:
           fs.writeFileSync(index, "exports.run = async () => { console.log('TESTS RAN'); };");
           const log = ["--log", "yagipass.vscode-spotless-for-gradle-and-maven:debug"];
           const ud = ["--user-data-dir", path.join(os.tmpdir(), "spotless-vscode-test")];
+          const udLong = ["--user-data-dir", path.join(process.env.RUNNER_TEMP, "ud-long")];
           const lp = ["--logsPath", path.join(root, ".cache", "logs", "diag")];
           (async () => {
-            for (const [name, launchArgs] of Object.entries({ ws: [ws], log, all: [...ud, ...lp, ...log, ws] })) {
-              try {
-                console.log("RESULT", name, "exit", await runTests({ version: "1.140.0", extensionDevelopmentPath: root, extensionTestsPath: index, launchArgs }));
-              } catch (e) {
-                console.log("RESULT", name, "error", String(e));
-              }
-            }
-            const base = { version: "1.140.0", files: ".cache/diag/dummy.test.js", workspaceFolder: "test/integration/fixtures/gradle", installExtensions: ["vscjava.vscode-gradle@3.18.0"], launchArgs: [...ud, ...lp, ...log], mocha: { ui: "tdd" } };
             const variants = {
-              cliFull: base,
-              cliNoExt: { ...base, installExtensions: [] },
-              cliNoWs: { ...base, workspaceFolder: undefined },
-              cliNoArgs: { ...base, launchArgs: [] },
+              logWs: [...log, ws],
+              lpWs: [...lp, ws],
+              udWs: [...ud, ws],
+              udLongWs: [...udLong, ws],
+              wsFirstAll: [ws, ...ud, ...lp, ...log],
+              all: [...ud, ...lp, ...log, ws],
             };
-            for (const [name, cfg] of Object.entries(variants)) {
-              const file = path.join(root, `.vscode-test.${name}.mjs`);
-              fs.writeFileSync(file, `import { defineConfig } from "@vscode/test-cli";\nexport default defineConfig(${JSON.stringify(cfg)});\n`);
-              const r = spawnSync(`pnpm exec vscode-test --config "${file}"`, { shell: true, encoding: "utf8" });
-              console.log("RESULT", name, "status", r.status, r.stdout.slice(-1500), r.stderr.slice(-1500));
+            for (const [name, launchArgs] of Object.entries(variants)) {
+              const started = Date.now();
+              try {
+                const code = await runTests({ version: "1.140.0", extensionDevelopmentPath: root, extensionTestsPath: index, launchArgs });
+                console.log("RESULT", name, "exit", code, Date.now() - started, "ms");
+              } catch (e) {
+                console.log("RESULT", name, "error", String(e), Date.now() - started, "ms");
+              }
             }
           })();
           JS
