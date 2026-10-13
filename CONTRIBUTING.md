@@ -38,6 +38,8 @@ pnpm test:integration
 
 `pnpm test:integration` downloads VS Code and the Gradle for Java extension, then formats the projects in `test/integration/fixtures` with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`. On Windows, it opens a copy of the fixtures in `.cache/café & 100% ^/` and uses that folder for temporary files too, so that paths with non-ASCII characters, spaces, `&`, `%` and `^` are covered.
 
+The VS Code and Gradle for Java versions come from the `latest` profile in `test/integration/profiles.mjs`. To run on the oldest VS Code that `engines.vscode` allows, as CI also does, set `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest`.
+
 ## Changing the minimum VS Code version
 
 Edit `engines.vscode` in `package.json`, then run:

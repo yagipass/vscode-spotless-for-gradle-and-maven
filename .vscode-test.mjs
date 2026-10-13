@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import process from "node:process";
 import { defineConfig } from "@vscode/test-cli";
+import { profile } from "./test/integration/profiles.mjs";
 
 const root = import.meta.dirname;
 const fixtures =
@@ -24,10 +25,10 @@ function config(label, test, workspace, env = {}) {
   const logs = path.join(root, ".cache", "logs", label);
   return {
     label,
-    version: "1.140.0",
+    version: profile.vscode,
     files: `out/test/integration/${test}.test.js`,
     workspaceFolder: path.join(fixtures, workspace),
-    installExtensions: ["vscjava.vscode-gradle@3.18.0"],
+    installExtensions: [`vscjava.vscode-gradle@${profile.gradleForJava}`],
     launchArgs: [
       "--user-data-dir",
       userDataDir,
