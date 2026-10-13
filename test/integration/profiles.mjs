@@ -27,6 +27,7 @@ const profiles = {
   oldest: {
     ...latest,
     vscode: minimumVSCode,
+    gradleForJava: "3.12.6",
     jdk: 17,
     mvnd: "1.0.3",
     gradle: "8.1",
