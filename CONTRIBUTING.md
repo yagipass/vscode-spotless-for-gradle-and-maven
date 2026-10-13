@@ -40,6 +40,12 @@ pnpm test:integration
 
 The fixtures use the latest Spotless plugins, Gradle and Maven, and the `latest` profile in `test/integration/profiles.mjs` sets the VS Code, Gradle for Java, JDK and mvnd versions. CI also runs the `oldest` profile, which `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest` selects. It runs the oldest versions that the README supports: the VS Code that `engines.vscode` starts at, the oldest Gradle for Java, JDK and mvnd, and, written into the copied fixtures, the oldest Gradle, Maven and Spotless plugins, with a google-java-format that runs on that JDK.
 
+The `gradle-for-java` workflow runs the Gradle tests every day with the newest stable and the newest pre-release Gradle for Java on the Marketplace, so a release that breaks formatting fails there without waiting for the `latest` profile to catch up, and a pre-release fails it before the stable release. To run the same tests locally, set `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA`, which overrides the profile's Gradle for Java version:
+
+```sh
+SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA=$(node scripts/newest-gradle-for-java.mjs pre-release) pnpm test:integration --label gradle
+```
+
 The Gradle fixtures set `org.gradle.warning.mode=fail`, so a formatting build that uses a deprecated Gradle feature fails the tests while the feature still works. `Spotless for Gradle and Maven.log` in `.cache/logs/` names the deprecation.
 
 ## Changing the minimum VS Code version

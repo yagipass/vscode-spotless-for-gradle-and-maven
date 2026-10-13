@@ -45,4 +45,9 @@ if (!Object.hasOwn(profiles, name)) {
   );
 }
 
-export const profile = profiles[name];
+export const profile = {
+  ...profiles[name],
+  gradleForJava:
+    process.env.SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA ??
+    profiles[name].gradleForJava,
+};
