@@ -94,12 +94,9 @@ jobs:
           const lp = ["--logsPath", path.join(root, ".cache", "logs", "diag")];
           (async () => {
             const variants = {
-              logWs: [...log, ws],
-              lpWs: [...lp, ws],
-              udWs: [...ud, ws],
-              udLongWs: [...udLong, ws],
-              wsFirstAll: [ws, ...ud, ...lp, ...log],
-              all: [...ud, ...lp, ...log, ws],
+              logEqWs: ["--log=yagipass.vscode-spotless-for-gradle-and-maven:debug", ws],
+              allEq: [...ud, ...lp, "--log=yagipass.vscode-spotless-for-gradle-and-maven:debug", ws],
+              logOtherValueWs: ["--log", "debug", ws],
             };
             for (const [name, launchArgs] of Object.entries(variants)) {
               const started = Date.now();
