@@ -75,6 +75,47 @@ jobs:
           Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
           Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
       - run: pnpm install --frozen-lockfile
+      - if: runner.os == 'Windows'
+        continue-on-error: true
+        run: |
+          pnpm build
+          mkdir -p .cache/diag
+          cat > .cache/diag/mvnd.cjs <<'JS'
+          const { spawnSync } = require("node:child_process");
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const root = process.cwd();
+          const meta = /([()\][%!^"`<>&|;, *?])/g;
+          const escape = (t) => t.replace(meta, "^$1");
+          const quote = (a) => `"${a.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, "$1$1")}"`;
+          const line = (exe, args) => [escape(exe), ...args.map((a) => escape(quote(a)))].join(" ");
+          const mvnd = spawnSync("where", ["mvnd.cmd"], { encoding: "utf8" }).stdout.split(/\r?\n/)[0];
+          const base = { MAVEN_USER_HOME: path.join(root, ".cache", "maven-user-home"), MVND_DAEMON_STORAGE: path.join(root, ".cache", "mvnd") };
+          for (const [name, dirName, extra] of [["plain", "plain", {}], ["ascii", "cafe & 100% ^", {}], ["nonAscii", "café", {}], ["nonAsciiJvm", "café", { MVND_CLIENT: "jvm" }]]) {
+            const dir = path.join(root, ".cache", "d", dirName);
+            fs.rmSync(dir, { recursive: true, force: true });
+            fs.cpSync(path.join(root, "test", "integration", "fixtures"), path.join(dir, "fixtures"), { recursive: true });
+            const project = path.join(dir, "fixtures", "maven", "single");
+            const file = path.join(project, "src", "main", "java", "com", "example", "Sample.java");
+            const hook = path.join(dir, "hook");
+            fs.mkdirSync(hook, { recursive: true });
+            fs.writeFileSync(path.join(hook, "stdin"), "package com.example;\npublic class Sample {\nint  x;\n}\n");
+            fs.writeFileSync(path.join(hook, "stdout"), "");
+            fs.writeFileSync(path.join(hook, "stderr"), "");
+            const args = ["-X", "-B", "-f", "pom.xml", "-N",
+              "--define", `maven.ext.class.path=${path.join(root, "dist", "spotless-for-gradle-and-maven-extension.jar")}`,
+              "--define", `spotlessForGradleAndMaven.stdin=${path.join(hook, "stdin")}`,
+              "--define", `spotlessForGradleAndMaven.stdout=${path.join(hook, "stdout")}`,
+              "--define", `spotlessForGradleAndMaven.stderr=${path.join(hook, "stderr")}`,
+              "--define", `spotlessIdeHook=${file}`,
+              "--define", "spotlessIdeHookUseStdIn", "--define", "spotlessIdeHookUseStdOut",
+              "com.diffplug.spotless:spotless-maven-plugin:apply"];
+            const r = spawnSync(process.env.ComSpec, ["/d", "/s", "/c", `"${line(mvnd, args)}"`], { cwd: project, env: { ...process.env, ...base, ...extra }, windowsVerbatimArguments: true, encoding: "utf8" });
+            console.log(`== ${name} status=${r.status} hook stderr=${JSON.stringify(fs.readFileSync(path.join(hook, "stderr"), "utf8"))}`);
+            console.log((r.stdout + r.stderr).split("\n").filter((l) => /spotlessIdeHook =|baseDir =|ERROR/.test(l)).slice(0, 10).join("\n"));
+          }
+          JS
+          node .cache/diag/mvnd.cjs
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
