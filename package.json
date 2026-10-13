@@ -2,7 +2,7 @@
   "name": "vscode-spotless-for-gradle-and-maven",
   "displayName": "Spotless for Gradle and Maven",
   "description": "Format on save with the Spotless configuration of your Gradle or Maven build.",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "publisher": "yagipass",
   "icon": "images/marketplace.png",
   "license": "MIT",
