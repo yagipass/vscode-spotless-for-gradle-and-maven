@@ -38,3 +38,7 @@ Or run **Spotless: Format Document** from the Command Palette.
 - On Windows, mvnd runs its slower JVM client when a path contains non-ASCII characters, because its native client garbles them.
 - Does not run with `files.autoSave: afterDelay`, because VS Code runs no code actions on auto save.
 - If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
+
+## Acknowledgements
+
+Inspired by [Spotless Gradle](https://github.com/badsyntax/vscode-spotless-gradle) by Richard Willis.
