@@ -54,6 +54,10 @@ Or run **Spotless: Format Document** from the Command Palette.
 
 `spotlessForGradleAndMaven.maven.executable` sets the Maven executable. When it is empty, the extension uses `mvnd` on the `PATH`, then `mvnw` in the build root, then `mvn` on the `PATH`, so a build with `mvnw` still runs on mvnd if mvnd is installed.
 
+## Troubleshooting
+
+If a saved file is not formatted, open the Output panel and select **Spotless for Gradle and Maven**. A build that fails is logged there with its output. To also log files that no Spotless format targets and the output of every build, run **Developer: Set Log Level...**, select **Spotless for Gradle and Maven**, and choose **Debug**.
+
 ## Limitations
 
 - With `ratchetFrom`, the first save after a change is not formatted. With mvnd, later saves may not be formatted either. Set `spotlessForGradleAndMaven.maven.executable` to `mvn` in that case.
