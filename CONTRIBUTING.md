@@ -36,7 +36,7 @@ pnpm test:integration
 
 `pnpm sync:runtime-types` checks that `@types/node` and `@types/vscode` match the oldest VS Code that `engines.vscode` allows, so that `pnpm typecheck` rejects APIs that version lacks.
 
-`pnpm test:integration` downloads VS Code and the Gradle for Java extension, then formats the projects in `test/integration/fixtures` with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`.
+`pnpm test:integration` downloads VS Code and the Gradle for Java extension, then formats the projects in `test/integration/fixtures` with Gradle, mvnd and `mvnw`. Caches and VS Code logs go to `.cache/`. On Windows, it opens a copy of the fixtures in a folder under `.cache/` whose path contains Japanese, spaces, `&`, `%` and `^`, and uses that folder for temporary files too.
 
 ## Changing the minimum VS Code version
 

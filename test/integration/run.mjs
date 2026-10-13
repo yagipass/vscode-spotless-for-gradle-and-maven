@@ -23,7 +23,7 @@ function run(command, args, cwd = root, extraEnv = {}) {
       })
     : spawnSync(command, args, options);
   if (error !== undefined) {
-    console.error(error);
+    process.stderr.write(`${String(error)}\n`);
   }
   return status ?? 1;
 }
