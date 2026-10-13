@@ -88,3 +88,54 @@ jobs:
           name: integration-logs-${{ runner.os }}-${{ matrix.profile }}
           path: .cache/logs
           include-hidden-files: true
+
+  tagpr:
+    if: github.event_name == 'push'
+    needs: [checks, integration]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    outputs:
+      tag: ${{ steps.tagpr.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: tagpr
+        uses: Songmu/tagpr@0c4eb5a3b0862693702acea436a7c68bd586530d # v1.21.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  publish:
+    if: needs.tagpr.outputs.tag != ''
+    needs: tagpr
+    runs-on: ubuntu-latest
+    environment: marketplace
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      TAG: ${{ needs.tagpr.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.tagpr.outputs.tag }}
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+      - run: test "v$(node -p 'require("./package.json").version')" = "$TAG"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm package
+      - run: gh release upload "$TAG" ./*.vsix --clobber
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - run: pnpm exec vsce publish --azure-credential --skip-duplicate --packagePath ./*.vsix
+      - run: gh release edit "$TAG" --draft=false
