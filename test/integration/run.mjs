@@ -16,12 +16,15 @@ const env = {
 
 function run(command, args, cwd = root, extraEnv = {}) {
   const options = { cwd, env: { ...env, ...extraEnv }, stdio: "inherit" };
-  const { status } = windows
+  const { status, error } = windows
     ? spawnSync([command, ...args].map((arg) => `"${arg}"`).join(" "), {
         ...options,
         shell: true,
       })
     : spawnSync(command, args, options);
+  if (error !== undefined) {
+    console.error(error);
+  }
   return status ?? 1;
 }
 
