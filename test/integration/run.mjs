@@ -17,7 +17,7 @@ const env = {
 function run(command, args, cwd = root, extraEnv = {}) {
   const options = { cwd, env: { ...env, ...extraEnv }, stdio: "inherit" };
   const { status, error } = windows
-    ? spawnSync([command, ...args].map((arg) => `"${arg}"`).join(" "), {
+    ? spawnSync([command, ...args.map((arg) => `"${arg}"`)].join(" "), {
         ...options,
         shell: true,
       })

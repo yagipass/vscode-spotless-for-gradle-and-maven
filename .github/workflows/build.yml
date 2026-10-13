@@ -74,30 +74,6 @@ jobs:
           if ((Get-FileHash $zip -Algorithm SHA512).Hash -ne $env:MVND_SHA512) { throw "$zip does not match its SHA-512" }
           Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
           Join-Path $env:RUNNER_TEMP $name bin | Add-Content $env:GITHUB_PATH
-      - if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          [System.Text.Encoding]::Default | Select-Object CodePage, EncodingName
-          Get-WinSystemLocale
-          git config --show-origin --get-all core.autocrlf
-          git ls-files --eol test/integration/fixtures/maven/single
-      - if: runner.os == 'Windows'
-        run: |
-          where mvn mvn.cmd || true
-          node -e '
-          const { spawnSync } = require("node:child_process");
-          const env = { ...process.env, X_TEST: "1" };
-          console.log(Object.keys(process.env).filter((k) => /^(path|temp|tmp|comspec)$/i.test(k)));
-          for (const [cmd, opts] of [
-            [`"mvn" "-v"`, {}],
-            [`mvn -v`, {}],
-            [`"mvn" "-v"`, { env }],
-            [`"mvn" "-q" "-B" "help:help"`, { env }],
-          ]) {
-            const r = spawnSync(cmd, { shell: true, encoding: "utf8", ...opts });
-            console.log(JSON.stringify({ cmd, status: r.status, error: r.error && String(r.error), stdout: r.stdout.slice(0, 400), stderr: r.stderr.slice(0, 400) }));
-          }
-          '
       - run: pnpm install --frozen-lockfile
       - run: ${{ runner.os == 'Linux' && 'xvfb-run -a ' || '' }}pnpm test:integration
       - if: failure()
