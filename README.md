@@ -24,6 +24,10 @@ Or run **Spotless: Format Document** from the Command Palette.
 
 - `spotlessForGradleAndMaven.maven.executable`: the Maven executable. When empty, `mvnd` on the `PATH`, then `mvnw` in the build root, then `mvn` on the `PATH`.
 
+## Privacy
+
+The extension sends no telemetry. To format a file, it writes the unsaved buffer to a new folder under the temp folder, runs your Gradle or Maven build on it locally, and deletes the folder when the build ends.
+
 ## Known limitations
 
 - Requires spotless-maven-plugin 2.40.0 or later and the Spotless Gradle plugin 8.7.0 or later. Older Maven plugins ignore the IDE hook and rewrite the module's files on disk; older Gradle plugins sometimes skip formatting.
@@ -38,6 +42,7 @@ Or run **Spotless: Format Document** from the Command Palette.
 - On Windows, mvnd runs its slower JVM client when a path contains non-ASCII characters, because its native client garbles them.
 - Does not run with `files.autoSave: afterDelay`, because VS Code runs no code actions on auto save.
 - If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
+- If VS Code quits while a file is being formatted, the folder that holds its buffer is not deleted.
 
 ## Acknowledgements
 
