@@ -130,7 +130,7 @@ function runProcess(
       windowsVerbatimArguments: windows,
     });
     const interrupt = () => {
-      if (!windows) {
+      if (windows || !windows) {
         child.kill("SIGINT");
       } else if (child.pid !== undefined) {
         spawn(
