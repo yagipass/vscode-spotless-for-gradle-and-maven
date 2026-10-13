@@ -19,7 +19,12 @@ const latest = { vscode: "1.140.0", gradleForJava: "3.18.0" };
 
 const profiles = {
   latest,
-  oldest: { ...latest, vscode: minimumVSCode },
+  oldest: {
+    ...latest,
+    vscode: minimumVSCode,
+    spotlessGradle: "8.7.0",
+    spotlessMaven: "2.40.0",
+  },
 };
 
 const name = process.env.SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE ?? "latest";
