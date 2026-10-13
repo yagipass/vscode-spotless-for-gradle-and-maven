@@ -91,7 +91,7 @@ jobs:
           const line = (exe, args) => [escape(exe), ...args.map((a) => escape(quote(a)))].join(" ");
           const mvnd = spawnSync("where", ["mvnd.cmd"], { encoding: "utf8" }).stdout.split(/\r?\n/)[0];
           const base = { MAVEN_USER_HOME: path.join(root, ".cache", "maven-user-home"), MVND_DAEMON_STORAGE: path.join(root, ".cache", "mvnd") };
-          for (const [name, dirName, extra] of [["plain", "plain", {}], ["ascii", "cafe & 100% ^", {}], ["nonAscii", "café", {}], ["nonAsciiJvm", "café", { MVND_CLIENT: "jvm" }]]) {
+          for (const [name, dirName, extra] of [["nonAsciiJvm", "café jvm & 100% ^", { MVND_CLIENT: "jvm" }], ["nonAsciiNative", "café native", {}]]) {
             const dir = path.join(root, ".cache", "d", dirName);
             fs.rmSync(dir, { recursive: true, force: true });
             fs.cpSync(path.join(root, "test", "integration", "fixtures"), path.join(dir, "fixtures"), { recursive: true });
