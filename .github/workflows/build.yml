@@ -24,6 +24,8 @@ jobs:
       - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+      - run: nix flake check -L
+        shell: bash
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
