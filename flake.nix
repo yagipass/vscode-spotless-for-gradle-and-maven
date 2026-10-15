@@ -11,12 +11,19 @@
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ inputs.treefmt-nix.flakeModule ];
+      imports = [
+        inputs.treefmt-nix.flakeModule
+        inputs.git-hooks.flakeModule
+      ];
 
       systems = [
         "aarch64-darwin"
@@ -26,6 +33,7 @@
 
       perSystem =
         {
+          config,
           pkgs,
           lib,
           system,
@@ -33,6 +41,7 @@
         }:
         let
           jdk = pkgs.jdk21;
+          fixtures = "^test/integration/fixtures/";
           mvnd103 = {
             aarch64-darwin = {
               platform = "darwin-aarch64";
@@ -72,6 +81,66 @@
             programs.nixfmt.enable = true;
           };
 
+          pre-commit.settings.hooks = {
+            treefmt = {
+              enable = true;
+              package = config.treefmt.build.wrapper;
+            };
+
+            gitleaks = {
+              enable = true;
+              entry = "${pkgs.writeShellScript "gitleaks-files" ''
+                status=0
+                for file in "$@"; do
+                  ${pkgs.gitleaks}/bin/gitleaks dir --config .gitleaks.toml --redact --verbose --no-banner --log-level warn "$file" || status=1
+                done
+                exit $status
+              ''}";
+              args = [ ];
+              pass_filenames = true;
+            };
+
+            convco.enable = true;
+
+            end-of-file-fixer = {
+              enable = true;
+              excludes = [ fixtures ];
+            };
+            trim-trailing-whitespace = {
+              enable = true;
+              excludes = [ fixtures ];
+            };
+            check-merge-conflicts = {
+              enable = true;
+              args = [ "--assume-in-merge" ];
+            };
+            check-added-large-files = {
+              enable = true;
+              args = [ "--enforce-all" ];
+              excludes = [ "^images/format-on-save\\.gif$" ];
+            };
+            detect-private-keys.enable = true;
+
+            typos = {
+              enable = true;
+              files = "\\.md$";
+            };
+            markdownlint = {
+              enable = true;
+              excludes = [ "^CHANGELOG\\.md$" ];
+              settings.configuration = {
+                default = true;
+                MD013 = false;
+                MD024.siblings_only = true;
+                MD031.list_items = false;
+                MD033 = false;
+                MD060 = false;
+              };
+            };
+
+            actionlint.enable = true;
+          };
+
           devShells.default = pkgs.mkShell {
             packages = [
               pkgs.nodejs_24
@@ -80,7 +149,10 @@
               (pkgs.gradle.override { java = jdk; })
               (pkgs.maven.override { jdk_headless = jdk; })
               pkgs.mvnd
-            ];
+            ]
+            ++ config.pre-commit.settings.enabledPackages;
+
+            shellHook = config.pre-commit.installationScript;
 
             env = {
               JAVA_HOME = "${jdk.home}";
