@@ -1,12 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import {
-  type Codec,
-  type HookOutput,
-  interpretHookOutput,
-  runWithHookFiles,
-} from "../../src/hook";
+import { type Codec, type HookOutput, interpretHookOutput, runWithHookFiles } from "../../src/hook";
 
 const shiftJisLike: Codec & { readonly calls: string[] } = {
   calls: [],
@@ -23,17 +18,12 @@ const shiftJisLike: Codec & { readonly calls: string[] } = {
 describe("runWithHookFiles", () => {
   it("encodes the buffer and decodes the result with the document's encoding, so non-UTF-8 sources round-trip", async () => {
     shiftJisLike.calls.length = 0;
-    const output = await runWithHookFiles(
-      "class a {}",
-      "shiftjis",
-      shiftJisLike,
-      async (files) => {
-        expect(await readFile(files.stdin, "utf8")).toBe("CLASS A {}");
-        await writeFile(files.stdout, "CLASS A {}\n");
-        await writeFile(files.stderr, "IS DIRTY\n");
-        return { exitCode: 0, log: "ran" };
-      },
-    );
+    const output = await runWithHookFiles("class a {}", "shiftjis", shiftJisLike, async (files) => {
+      expect(await readFile(files.stdin, "utf8")).toBe("CLASS A {}");
+      await writeFile(files.stdout, "CLASS A {}\n");
+      await writeFile(files.stderr, "IS DIRTY\n");
+      return { exitCode: 0, log: "ran" };
+    });
     expect(output).toEqual({
       exitCode: 0,
       log: "ran",
@@ -72,9 +62,10 @@ function output(overrides: Partial<HookOutput>): HookOutput {
 
 describe("interpretHookOutput", () => {
   it("uses stdout as the formatted text when Spotless reports IS DIRTY", () => {
-    expect(
-      interpretHookOutput(output({ stderr: "IS DIRTY\n", stdout: formatted })),
-    ).toEqual({ kind: "dirty", formatted });
+    expect(interpretHookOutput(output({ stderr: "IS DIRTY\n", stdout: formatted }))).toEqual({
+      kind: "dirty",
+      formatted,
+    });
   });
 
   it("leaves the buffer alone when Spotless reports IS CLEAN", () => {
@@ -85,9 +76,7 @@ describe("interpretHookOutput", () => {
 
   it("does not apply a result that did not converge, because it would change the file again on every save", () => {
     expect(
-      interpretHookOutput(
-        output({ stderr: "DID NOT CONVERGE\n", stdout: formatted }),
-      ),
+      interpretHookOutput(output({ stderr: "DID NOT CONVERGE\n", stdout: formatted })),
     ).toEqual({ kind: "didNotConverge" });
   });
 
@@ -97,18 +86,14 @@ describe("interpretHookOutput", () => {
 
   it("refuses to apply anything when two formats answered, because the second one formatted an empty input", () => {
     expect(
-      interpretHookOutput(
-        output({ stderr: "IS DIRTY\nIS CLEAN\n", stdout: `${formatted}\n` }),
-      ),
+      interpretHookOutput(output({ stderr: "IS DIRTY\nIS CLEAN\n", stdout: `${formatted}\n` })),
     ).toEqual({ kind: "multipleFormats" });
   });
 
   it("never applies output from a failed build, so a syntax error cannot wipe the buffer", () => {
-    expect(
-      interpretHookOutput(
-        output({ exitCode: 1, stderr: "IS DIRTY\n", stdout: "" }),
-      ),
-    ).toEqual({ kind: "failed" });
+    expect(interpretHookOutput(output({ exitCode: 1, stderr: "IS DIRTY\n", stdout: "" }))).toEqual({
+      kind: "failed",
+    });
   });
 
   it("finds the status line among JVM warnings and Windows line endings", () => {
@@ -126,9 +111,7 @@ describe("interpretHookOutput", () => {
 
   it("does not mistake a warning that mentions a status for the status itself", () => {
     expect(
-      interpretHookOutput(
-        output({ stderr: "WARNING: file IS DIRTY in cache\nIS CLEAN\n" }),
-      ),
+      interpretHookOutput(output({ stderr: "WARNING: file IS DIRTY in cache\nIS CLEAN\n" })),
     ).toEqual({ kind: "clean" });
   });
 });

@@ -1,9 +1,4 @@
-import {
-  type Build,
-  detectBuild,
-  type GradleBuild,
-  type MavenBuild,
-} from "./build";
+import { type Build, detectBuild, type GradleBuild, type MavenBuild } from "./build";
 import {
   type BuildRequest,
   type BuildResult,
@@ -16,9 +11,7 @@ import {
 import { minimalEdit, type TextReplacement } from "./minimalEdit";
 import { SerialQueue } from "./serialQueue";
 
-type Backend<B extends Build> = (
-  request: BuildRequest<B>,
-) => Promise<BuildResult>;
+type Backend<B extends Build> = (request: BuildRequest<B>) => Promise<BuildResult>;
 
 export interface Backends {
   readonly gradle: Backend<GradleBuild>;
@@ -85,11 +78,7 @@ export class SpotlessFormatter {
       );
       return undefined;
     }
-    return toFormatEdit(
-      text,
-      document.eol === 2 ? "\r\n" : "\n",
-      result.formatted,
-    );
+    return toFormatEdit(text, document.eol === 2 ? "\r\n" : "\n", result.formatted);
   }
 
   private async run(
@@ -102,14 +91,10 @@ export class SpotlessFormatter {
     try {
       const output = await this.queue.run(build.root, signal, async () => {
         const started = Date.now();
-        const output = await runWithHookFiles(
-          text,
-          encoding,
-          this.codec,
-          (hookFiles) =>
-            build.tool === "gradle"
-              ? this.backends.gradle({ build, file, hookFiles, signal })
-              : this.backends.maven({ build, file, hookFiles, signal }),
+        const output = await runWithHookFiles(text, encoding, this.codec, (hookFiles) =>
+          build.tool === "gradle"
+            ? this.backends.gradle({ build, file, hookFiles, signal })
+            : this.backends.maven({ build, file, hookFiles, signal }),
         );
         this.log.debug(
           `Spotless (${build.tool}) ran in ${String(Date.now() - started)} ms for ${file}`,
@@ -139,9 +124,7 @@ export class SpotlessFormatter {
         this.log.warn(
           `${file} is a target of more than one Spotless format; it was not formatted.`,
         );
-        this.showStatus(
-          "$(warning) Spotless: multiple formats match this file",
-        );
+        this.showStatus("$(warning) Spotless: multiple formats match this file");
         return;
       case "didNotConverge":
         this.log.warn(`Spotless did not converge for ${file}`);
@@ -162,12 +145,8 @@ function toFormatEdit(
     : formatted.includes("\n")
       ? "\n"
       : lineEnding;
-  const replacement = minimalEdit(
-    text,
-    formatted.replace(/\r?\n/g, lineEnding),
-  );
-  const changedLineEnding =
-    formattedLineEnding === lineEnding ? undefined : formattedLineEnding;
+  const replacement = minimalEdit(text, formatted.replace(/\r?\n/g, lineEnding));
+  const changedLineEnding = formattedLineEnding === lineEnding ? undefined : formattedLineEnding;
   return replacement === undefined && changedLineEnding === undefined
     ? undefined
     : { replacement, lineEnding: changedLineEnding };

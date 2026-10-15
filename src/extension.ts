@@ -3,9 +3,7 @@ import { SpotlessFormatter } from "./formatter";
 import { type GradleApi, runGradle } from "./gradle";
 import { runMaven } from "./maven";
 
-const codeActionKind = vscode.CodeActionKind.SourceFixAll.append(
-  "spotlessForGradleAndMaven",
-);
+const codeActionKind = vscode.CodeActionKind.SourceFixAll.append("spotlessForGradleAndMaven");
 const gradleExtensionId = "vscjava.vscode-gradle";
 
 class SpotlessCodeAction extends vscode.CodeAction {
@@ -15,22 +13,14 @@ class SpotlessCodeAction extends vscode.CodeAction {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const log = vscode.window.createOutputChannel(
-    "Spotless for Gradle and Maven",
-    {
-      log: true,
-    },
-  );
-  const extensionJar = context.asAbsolutePath(
-    "dist/spotless-for-gradle-and-maven-extension.jar",
-  );
-  const initScript = context.asAbsolutePath(
-    "dist/spotless-for-gradle-and-maven.gradle",
-  );
+  const log = vscode.window.createOutputChannel("Spotless for Gradle and Maven", {
+    log: true,
+  });
+  const extensionJar = context.asAbsolutePath("dist/spotless-for-gradle-and-maven-extension.jar");
+  const initScript = context.asAbsolutePath("dist/spotless-for-gradle-and-maven.gradle");
   let missingGradleReported = false;
   const loadGradleApi = async (): Promise<GradleApi> => {
-    const extension =
-      vscode.extensions.getExtension<GradleApi>(gradleExtensionId);
+    const extension = vscode.extensions.getExtension<GradleApi>(gradleExtensionId);
     if (extension === undefined) {
       if (!missingGradleReported) {
         missingGradleReported = true;
@@ -44,8 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
   };
   const formatter = new SpotlessFormatter(
     {
-      gradle: async (request) =>
-        runGradle(request, await loadGradleApi(), initScript),
+      gradle: async (request) => runGradle(request, await loadGradleApi(), initScript),
       maven: (request) =>
         runMaven(request, {
           extensionJar,
@@ -56,8 +45,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     {
       encode: (text, encoding) => vscode.workspace.encode(text, { encoding }),
-      decode: (content, encoding) =>
-        vscode.workspace.decode(content, { encoding }),
+      decode: (content, encoding) => vscode.workspace.decode(content, { encoding }),
     },
     log,
     (message) => vscode.window.setStatusBarMessage(message, 5000),
@@ -71,11 +59,7 @@ export function activate(context: vscode.ExtensionContext): void {
     if (document.uri.scheme !== "file" || folder === undefined) {
       return undefined;
     }
-    const edit = await formatter.format(
-      document,
-      folder.uri.fsPath,
-      toAbortSignal(token),
-    );
+    const edit = await formatter.format(document, folder.uri.fsPath, toAbortSignal(token));
     if (edit === undefined) {
       return undefined;
     }
@@ -90,9 +74,7 @@ export function activate(context: vscode.ExtensionContext): void {
     if (edit.lineEnding !== undefined) {
       edits.push(
         vscode.TextEdit.setEndOfLine(
-          edit.lineEnding === "\r\n"
-            ? vscode.EndOfLine.CRLF
-            : vscode.EndOfLine.LF,
+          edit.lineEnding === "\r\n" ? vscode.EndOfLine.CRLF : vscode.EndOfLine.LF,
         ),
       );
     }
@@ -133,15 +115,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     log,
-    vscode.languages.registerCodeActionsProvider(
-      { scheme: "file" },
-      codeActionProvider,
-      { providedCodeActionKinds: [codeActionKind] },
-    ),
-    vscode.commands.registerCommand(
-      "spotlessForGradleAndMaven.formatDocument",
-      formatDocument,
-    ),
+    vscode.languages.registerCodeActionsProvider({ scheme: "file" }, codeActionProvider, {
+      providedCodeActionKinds: [codeActionKind],
+    }),
+    vscode.commands.registerCommand("spotlessForGradleAndMaven.formatDocument", formatDocument),
   );
 }
 

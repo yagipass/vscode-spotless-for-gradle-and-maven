@@ -3,21 +3,14 @@ import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type {
-  Backends,
-  FormatEdit,
-  FormatTarget,
-  Logger,
-} from "../../src/formatter";
+import type { Backends, FormatEdit, FormatTarget, Logger } from "../../src/formatter";
 import { SpotlessFormatter } from "../../src/formatter";
 import type { Codec } from "../../src/hook";
 
 let workspace: string;
 
 beforeEach(() => {
-  workspace = mkdtempSync(
-    path.join(tmpdir(), "spotless-for-gradle-and-maven-formatter-"),
-  );
+  workspace = mkdtempSync(path.join(tmpdir(), "spotless-for-gradle-and-maven-formatter-"));
   writeFileSync(path.join(workspace, "pom.xml"), "");
 });
 
@@ -87,18 +80,12 @@ function setUp(backends: Backends) {
   const formatter = new SpotlessFormatter(backends, utf8, log, (message) => {
     statuses.push(message);
   });
-  const format = (
-    document: FormatTarget,
-    signal = new AbortController().signal,
-  ) => formatter.format(document, workspace, signal);
+  const format = (document: FormatTarget, signal = new AbortController().signal) =>
+    formatter.format(document, workspace, signal);
   return { format, lines, statuses };
 }
 
-function applyLikeTheEditor(
-  original: string,
-  eol: string,
-  edit: FormatEdit | undefined,
-): string {
+function applyLikeTheEditor(original: string, eol: string, edit: FormatEdit | undefined): string {
   const replacement = edit?.replacement;
   const text =
     replacement === undefined
@@ -106,9 +93,7 @@ function applyLikeTheEditor(
       : original.slice(0, replacement.start) +
         replacement.text.replace(/\r\n|\r|\n/g, eol) +
         original.slice(replacement.end);
-  return edit?.lineEnding === undefined
-    ? text
-    : text.replace(/\r\n|\n/g, edit.lineEnding);
+  return edit?.lineEnding === undefined ? text : text.replace(/\r\n|\n/g, edit.lineEnding);
 }
 
 const dirty = { stdout: "class A {}\n", stderr: "IS DIRTY\n" };
@@ -161,11 +146,9 @@ describe("SpotlessFormatter", () => {
       }),
     );
     await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
-    expect(
-      lines.some(
-        (line) => line.startsWith("error: ") && line.includes("found problem"),
-      ),
-    ).toBe(true);
+    expect(lines.some((line) => line.startsWith("error: ") && line.includes("found problem"))).toBe(
+      true,
+    );
   });
 
   it("starts no build at all for a file outside any Gradle or Maven build", async () => {
@@ -188,9 +171,7 @@ describe("SpotlessFormatter", () => {
         controller.abort();
       }),
     );
-    await expect(
-      format(new FakeDocument("x\n"), controller.signal),
-    ).resolves.toBeUndefined();
+    await expect(format(new FakeDocument("x\n"), controller.signal)).resolves.toBeUndefined();
   });
 });
 
@@ -198,9 +179,7 @@ describe("SpotlessFormatter line endings", () => {
   it("switches an LF buffer to the CRLF that Spotless produced without leaving a stray CR that the editor would turn into a blank line", async () => {
     const original = "class A {\nint  x;\n}\n";
     const formatted = "class A {\r\n  int x;\r\n}\r\n";
-    const { format } = setUp(
-      mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }),
-    );
+    const { format } = setUp(mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }));
     const edit = await format(new FakeDocument(original, 1));
     expect(edit?.lineEnding).toBe("\r\n");
     expect(edit?.replacement?.text).not.toContain("\r");
@@ -210,21 +189,16 @@ describe("SpotlessFormatter line endings", () => {
   it("switches a CRLF buffer to the LF that Spotless produced with a small edit instead of replacing the whole document", async () => {
     const original = "class A {\r\nint  x;\r\n}\r\n";
     const formatted = "class A {\n  int x;\n}\n";
-    const { format } = setUp(
-      mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }),
-    );
+    const { format } = setUp(mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }));
     const edit = await format(new FakeDocument(original, 2));
     expect(edit?.lineEnding).toBe("\n");
-    const replaced =
-      (edit?.replacement?.end ?? 0) - (edit?.replacement?.start ?? 0);
+    const replaced = (edit?.replacement?.end ?? 0) - (edit?.replacement?.start ?? 0);
     expect(replaced).toBeLessThan(8);
     expect(applyLikeTheEditor(original, "\r\n", edit)).toBe(formatted);
   });
 
   it("changes only the line endings when that is all Spotless changed, so the text itself is left untouched", async () => {
-    const { format } = setUp(
-      mavenBuild({ stdout: "a\nb\n", stderr: "IS DIRTY\n" }),
-    );
+    const { format } = setUp(mavenBuild({ stdout: "a\nb\n", stderr: "IS DIRTY\n" }));
     await expect(format(new FakeDocument("a\r\nb\r\n", 2))).resolves.toEqual({
       replacement: undefined,
       lineEnding: "\n",

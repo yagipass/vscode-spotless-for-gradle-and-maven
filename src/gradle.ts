@@ -1,12 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { realpath } from "node:fs/promises";
 import type { GradleBuild } from "./build";
-import {
-  type BuildRequest,
-  type BuildResult,
-  type HookFiles,
-  hookProperties,
-} from "./hook";
+import { type BuildRequest, type BuildResult, type HookFiles, hookProperties } from "./hook";
 
 interface GradleOutput {
   getOutputBytes_asU8(): Uint8Array;

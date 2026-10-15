@@ -21,12 +21,9 @@ import {
   workspacePath,
 } from "./helpers";
 
-const expectedExecutable =
-  process.env["SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_MAVEN"] ?? "";
+const expectedExecutable = process.env["SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_MAVEN"] ?? "";
 const expectedFileName =
-  process.platform === "win32"
-    ? `${expectedExecutable}.cmd`
-    : expectedExecutable;
+  process.platform === "win32" ? `${expectedExecutable}.cmd` : expectedExecutable;
 
 suite(`Maven single module (${expectedExecutable})`, () => {
   commonSuite({
@@ -53,26 +50,20 @@ suite(`Maven multi-module build (${expectedExecutable})`, () => {
   });
 });
 
-suite(
-  `Maven configuration from a plugin dependency (${expectedExecutable})`,
-  () => {
-    test("applies the Eclipse formatter settings packaged in a jar on the plugin's classpath", async () => {
-      const uri = await createFile(
-        path.join(sourceDir("eclipse-config"), "TmpEclipse.java"),
-        placeholder("TmpEclipse"),
-      );
-      const document = await openWithUnsavedText(
-        uri,
-        unformatted("TmpEclipse"),
-      );
-      await save(document);
-      assert.equal(
-        document.getText(),
-        "package com.example;\npublic class TmpEclipse {\n       int x = 1;\n}\n",
-      );
-    });
-  },
-);
+suite(`Maven configuration from a plugin dependency (${expectedExecutable})`, () => {
+  test("applies the Eclipse formatter settings packaged in a jar on the plugin's classpath", async () => {
+    const uri = await createFile(
+      path.join(sourceDir("eclipse-config"), "TmpEclipse.java"),
+      placeholder("TmpEclipse"),
+    );
+    const document = await openWithUnsavedText(uri, unformatted("TmpEclipse"));
+    await save(document);
+    assert.equal(
+      document.getText(),
+      "package com.example;\npublic class TmpEclipse {\n       int x = 1;\n}\n",
+    );
+  });
+});
 
 suite(`Maven Shift_JIS sources (${expectedExecutable})`, () => {
   shiftJisTest(() => sourceDir("sjis"));

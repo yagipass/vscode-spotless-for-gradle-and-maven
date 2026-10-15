@@ -71,23 +71,19 @@ export default defineConfig(
         },
         {
           property: "registerDocumentFormattingEditProvider",
-          message:
-            "A second formatter per language silently disables the user's formatOnSave.",
+          message: "A second formatter per language silently disables the user's formatOnSave.",
         },
         {
           property: "registerDocumentRangeFormattingEditProvider",
-          message:
-            "A second formatter per language silently disables the user's formatOnSave.",
+          message: "A second formatter per language silently disables the user's formatOnSave.",
         },
         {
           property: "showErrorMessage",
-          message:
-            "Formatting fails often while editing; log it instead of notifying.",
+          message: "Formatting fails often while editing; log it instead of notifying.",
         },
         {
           property: "showWarningMessage",
-          message:
-            "Formatting fails often while editing; log it instead of notifying.",
+          message: "Formatting fails often while editing; log it instead of notifying.",
         },
       ],
       "no-restricted-imports": ["error", { paths: shellImports }],

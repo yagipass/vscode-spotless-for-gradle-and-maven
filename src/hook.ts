@@ -43,9 +43,7 @@ export async function runWithHookFiles(
   codec: Codec,
   run: (hookFiles: HookFiles) => Promise<BuildResult>,
 ): Promise<HookOutput> {
-  const dir = await mkdtemp(
-    path.join(tmpdir(), "spotless-for-gradle-and-maven-"),
-  );
+  const dir = await mkdtemp(path.join(tmpdir(), "spotless-for-gradle-and-maven-"));
   try {
     const hookFiles: HookFiles = {
       stdin: path.join(dir, "stdin"),

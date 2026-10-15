@@ -64,10 +64,7 @@ describe("minimalEdit", () => {
     ["\u{1F600}\u{1F600}", "\u{1F600}"],
     ["// 日本語\nint  x;\n", "// 日本語\nint x;\n"],
     ["abcabc", "abc"],
-  ])(
-    "applying the edit to %j yields exactly the formatter output %j",
-    (original, formatted) => {
-      expect(apply(original, minimalEdit(original, formatted))).toBe(formatted);
-    },
-  );
+  ])("applying the edit to %j yields exactly the formatter output %j", (original, formatted) => {
+    expect(apply(original, minimalEdit(original, formatted))).toBe(formatted);
+  });
 });
