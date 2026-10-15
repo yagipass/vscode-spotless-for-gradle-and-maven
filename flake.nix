@@ -1,8 +1,8 @@
 {
-  description = "vscode-spotless-for-gradle-and-maven dev shell";
+  description = "Format on save with the Spotless configuration of your Gradle or Maven build";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -146,7 +146,6 @@
               pkgs.nodejs_24
               pkgs.pnpm
               jdk
-              (pkgs.gradle.override { java = jdk; })
               (pkgs.maven.override { jdk_headless = jdk; })
               pkgs.mvnd
             ]
