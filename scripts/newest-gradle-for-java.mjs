@@ -16,8 +16,7 @@ if (channel !== "stable" && channel !== "pre-release") {
   fail("Usage: node scripts/newest-gradle-for-java.mjs stable|pre-release");
 }
 
-const url =
-  "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery";
+const url = "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery";
 const response = await globalThis.fetch(url, {
   method: "POST",
   headers: {
@@ -25,9 +24,7 @@ const response = await globalThis.fetch(url, {
     Accept: "application/json;api-version=3.0-preview.1",
   },
   body: JSON.stringify({
-    filters: [
-      { criteria: [{ filterType: byExtensionName, value: extension }] },
-    ],
+    filters: [{ criteria: [{ filterType: byExtensionName, value: extension }] }],
     flags: includeVersions | includeVersionProperties,
   }),
 });
@@ -35,16 +32,12 @@ if (!response.ok) {
   fail(`POST ${url} failed with ${response.status}`);
 }
 
-const versions =
-  (await response.json()).results?.[0]?.extensions?.[0]?.versions ?? [];
+const versions = (await response.json()).results?.[0]?.extensions?.[0]?.versions ?? [];
 const preRelease = (version) =>
   version.properties?.some(
-    ({ key, value }) =>
-      key === "Microsoft.VisualStudio.Code.PreRelease" && value === "true",
+    ({ key, value }) => key === "Microsoft.VisualStudio.Code.PreRelease" && value === "true",
   ) ?? false;
-const newest = versions.find(
-  (version) => channel === "pre-release" || !preRelease(version),
-);
+const newest = versions.find((version) => channel === "pre-release" || !preRelease(version));
 if (newest === undefined) {
   fail(`The Marketplace lists no ${channel} version of ${extension}.`);
 }

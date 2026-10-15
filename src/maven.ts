@@ -2,12 +2,7 @@ import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
 import * as path from "node:path";
 import type { MavenBuild } from "./build";
-import {
-  type BuildRequest,
-  type BuildResult,
-  type HookFiles,
-  hookProperties,
-} from "./hook";
+import { type BuildRequest, type BuildResult, type HookFiles, hookProperties } from "./hook";
 
 export interface MavenOptions {
   readonly extensionJar: string;
@@ -32,11 +27,7 @@ export function findMavenExecutable(
       .map((dir) => path.join(dir, executableName(name)))
       .find(isExecutable);
   const wrapper = path.join(root, executableName("mvnw"));
-  return (
-    onPath("mvnd") ??
-    (isExecutable(wrapper) ? wrapper : undefined) ??
-    onPath("mvn")
-  );
+  return onPath("mvnd") ?? (isExecutable(wrapper) ? wrapper : undefined) ?? onPath("mvn");
 }
 
 export function mavenArgs(
@@ -46,10 +37,7 @@ export function mavenArgs(
   hookFiles: HookFiles,
 ): string[] {
   const module = path.relative(build.root, build.module);
-  const properties = [
-    `maven.ext.class.path=${extensionJar}`,
-    ...hookProperties(file, hookFiles),
-  ];
+  const properties = [`maven.ext.class.path=${extensionJar}`, ...hookProperties(file, hookFiles)];
   return [
     "-q",
     "-B",
@@ -79,12 +67,7 @@ export async function runMaven(
       "No Maven executable found: install mvnd or mvn, add mvnw to the build root, or set spotlessForGradleAndMaven.maven.executable",
     );
   }
-  const args = mavenArgs(
-    build,
-    request.file,
-    options.extensionJar,
-    request.hookFiles,
-  );
+  const args = mavenArgs(build, request.file, options.extensionJar, request.hookFiles);
   const result = await runProcess(executable, args, build.root, request.signal);
   return {
     exitCode: result.exitCode,
@@ -92,16 +75,10 @@ export async function runMaven(
   };
 }
 
-export function windowsCommandLine(
-  executable: string,
-  args: readonly string[],
-): string {
+export function windowsCommandLine(executable: string, args: readonly string[]): string {
   const escape = (text: string) => text.replace(cmdMetaCharacters, "^$1");
-  const quote = (arg: string) =>
-    `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, "$1$1")}"`;
-  return [escape(executable), ...args.map((arg) => escape(quote(arg)))].join(
-    " ",
-  );
+  const quote = (arg: string) => `"${arg.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\*)$/, "$1$1")}"`;
+  return [escape(executable), ...args.map((arg) => escape(quote(arg)))].join(" ");
 }
 
 function runProcess(
@@ -134,11 +111,7 @@ function runProcess(
         child.kill("SIGINT");
       } else if (child.pid !== undefined) {
         spawn(
-          path.join(
-            process.env["SystemRoot"] ?? "C:\\Windows",
-            "System32",
-            "taskkill.exe",
-          ),
+          path.join(process.env["SystemRoot"] ?? "C:\\Windows", "System32", "taskkill.exe"),
           ["/pid", String(child.pid), "/t", "/f"],
           { stdio: "ignore", windowsHide: true },
         ).on("error", () => undefined);

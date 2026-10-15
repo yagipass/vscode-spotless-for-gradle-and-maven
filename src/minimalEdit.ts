@@ -4,19 +4,13 @@ export interface TextReplacement {
   readonly text: string;
 }
 
-export function minimalEdit(
-  original: string,
-  formatted: string,
-): TextReplacement | undefined {
+export function minimalEdit(original: string, formatted: string): TextReplacement | undefined {
   if (original === formatted) {
     return undefined;
   }
   const shorter = Math.min(original.length, formatted.length);
   let prefix = 0;
-  while (
-    prefix < shorter &&
-    original.charCodeAt(prefix) === formatted.charCodeAt(prefix)
-  ) {
+  while (prefix < shorter && original.charCodeAt(prefix) === formatted.charCodeAt(prefix)) {
     prefix++;
   }
   if (prefix > 0 && splitsCharacter(original, prefix)) {
@@ -43,8 +37,7 @@ export function minimalEdit(
 function splitsCharacter(text: string, offset: number): boolean {
   const before = text.charCodeAt(offset - 1);
   const after = text.charCodeAt(offset);
-  const surrogatePair =
-    before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff;
+  const surrogatePair = before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff;
   const crlf = before === 0x0d && after === 0x0a;
   return surrogatePair || crlf;
 }

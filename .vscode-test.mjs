@@ -12,9 +12,7 @@ const fixtures =
 const userDataDir = path.join(os.tmpdir(), "spotless-vscode-test");
 const mvnd = process.platform === "win32" ? "mvnd.cmd" : "mvnd";
 
-const pathKey =
-  Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ??
-  "PATH";
+const pathKey = Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ?? "PATH";
 
 const pathWithoutMvnd = (process.env[pathKey] ?? "")
   .split(path.delimiter)

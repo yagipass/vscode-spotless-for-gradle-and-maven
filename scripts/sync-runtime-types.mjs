@@ -7,8 +7,7 @@ import process from "node:process";
 const root = path.resolve(import.meta.dirname, "..");
 const packagePath = path.join(root, "package.json");
 const dependabotPath = path.join(root, ".github", "dependabot.yml");
-const nodeIgnore =
-  /(- dependency-name: "@types\/node"\n\s+versions: \[">=)(\d+)(\.0\.0"\])/;
+const nodeIgnore = /(- dependency-name: "@types\/node"\n\s+versions: \[">=)(\d+)(\.0\.0"\])/;
 
 function fail(message) {
   console.error(message);
@@ -64,21 +63,15 @@ const typesVscode = pkg.devDependencies["@types/vscode"];
 const dependabot = readFileSync(dependabotPath, "utf8");
 const ignoredFrom = nodeIgnore.exec(dependabot)?.[2];
 if (!ignoredFrom) {
-  fail(
-    `.github/dependabot.yml must ignore @types/node with versions: [">=${node + 1}.0.0"].`,
-  );
+  fail(`.github/dependabot.yml must ignore @types/node with versions: [">=${node + 1}.0.0"].`);
 }
 
 const problems = [];
 if (Number(/^[\^~]?(\d+)\./.exec(typesNode)?.[1]) !== node) {
-  problems.push(
-    `@types/node is ${typesNode}, but VS Code ${minimum} runs Node ${node}.`,
-  );
+  problems.push(`@types/node is ${typesNode}, but VS Code ${minimum} runs Node ${node}.`);
 }
 if (typesVscode !== minimum) {
-  problems.push(
-    `@types/vscode is ${typesVscode}, but engines.vscode starts at ${minimum}.`,
-  );
+  problems.push(`@types/vscode is ${typesVscode}, but engines.vscode starts at ${minimum}.`);
 }
 if (Number(ignoredFrom) !== node + 1) {
   problems.push(
@@ -95,8 +88,7 @@ for (const problem of problems) {
 }
 if (
   typesVscode !== minimum &&
-  (await fetchText(`https://registry.npmjs.org/@types/vscode/${minimum}`)) ===
-    undefined
+  (await fetchText(`https://registry.npmjs.org/@types/vscode/${minimum}`)) === undefined
 ) {
   fail(
     `@types/vscode ${minimum} is not published. Set engines.vscode to a version that has types.`,
@@ -106,16 +98,12 @@ if (!process.argv.includes("--fix")) {
   fail("Run pnpm sync:runtime-types --fix.");
 }
 
-const add = spawnSync(
-  "pnpm",
-  ["add", "-D", `@types/node@^${node}`, `@types/vscode@${minimum}`],
-  { cwd: root, stdio: "inherit" },
-);
+const add = spawnSync("pnpm", ["add", "-D", `@types/node@^${node}`, `@types/vscode@${minimum}`], {
+  cwd: root,
+  stdio: "inherit",
+});
 if (add.status !== 0) {
   fail("pnpm add failed.");
 }
-writeFileSync(
-  dependabotPath,
-  dependabot.replace(nodeIgnore, `$1${node + 1}$3`),
-);
+writeFileSync(dependabotPath, dependabot.replace(nodeIgnore, `$1${node + 1}$3`));
 console.log("Synced runtime types with engines.vscode.");

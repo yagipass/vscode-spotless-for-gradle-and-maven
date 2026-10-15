@@ -1,26 +1,13 @@
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  findMavenExecutable,
-  mavenArgs,
-  runMaven,
-  windowsCommandLine,
-} from "../../src/maven";
+import { findMavenExecutable, mavenArgs, runMaven, windowsCommandLine } from "../../src/maven";
 
 let base: string;
 
 beforeEach(() => {
-  base = mkdtempSync(
-    path.join(tmpdir(), "spotless-for-gradle-and-maven-maven-"),
-  );
+  base = mkdtempSync(path.join(tmpdir(), "spotless-for-gradle-and-maven-maven-"));
 });
 
 afterEach(() => {
@@ -125,11 +112,7 @@ describe("findMavenExecutable", () => {
   it("uses the configured executable as is, so users can pick mvn when mvnd misbehaves", () => {
     executable("bin/mvnd");
     expect(
-      findMavenExecutable(
-        path.join(base, "root"),
-        "/opt/maven/bin/mvn",
-        path.join(base, "bin"),
-      ),
+      findMavenExecutable(path.join(base, "root"), "/opt/maven/bin/mvn", path.join(base, "bin")),
     ).toBe("/opt/maven/bin/mvn");
   });
 
@@ -137,37 +120,27 @@ describe("findMavenExecutable", () => {
     const mvnd = executable("bin/mvnd");
     executable("bin/mvn");
     executable("root/mvnw");
-    expect(
-      findMavenExecutable(path.join(base, "root"), "", path.join(base, "bin")),
-    ).toBe(mvnd);
+    expect(findMavenExecutable(path.join(base, "root"), "", path.join(base, "bin"))).toBe(mvnd);
   });
 
   it("uses the build's own mvnw over a global mvn, so the project's pinned Maven version runs", () => {
     executable("bin/mvn");
     const mvnw = executable("root/mvnw");
-    expect(
-      findMavenExecutable(path.join(base, "root"), "", path.join(base, "bin")),
-    ).toBe(mvnw);
+    expect(findMavenExecutable(path.join(base, "root"), "", path.join(base, "bin"))).toBe(mvnw);
   });
 
   it("falls back to mvn on the PATH, so a plain Maven installation still works", () => {
     executable("other/tool");
     const mvn = executable("bin/mvn");
-    const searchPath = [path.join(base, "other"), path.join(base, "bin")].join(
-      path.delimiter,
-    );
-    expect(findMavenExecutable(path.join(base, "root"), "", searchPath)).toBe(
-      mvn,
-    );
+    const searchPath = [path.join(base, "other"), path.join(base, "bin")].join(path.delimiter);
+    expect(findMavenExecutable(path.join(base, "root"), "", searchPath)).toBe(mvn);
   });
 
   it("ignores files that are not executable, so a stray file named mvnd does not break every save", () => {
     writeFileSync(path.join(base, "mvnd"), "");
     const mvn = executable("bin/mvn");
     const searchPath = [base, path.join(base, "bin")].join(path.delimiter);
-    expect(findMavenExecutable(path.join(base, "root"), "", searchPath)).toBe(
-      mvn,
-    );
+    expect(findMavenExecutable(path.join(base, "root"), "", searchPath)).toBe(mvn);
   });
 
   it("reports that nothing was found, so the caller can log why nothing ran", () => {

@@ -1,11 +1,4 @@
-import {
-  mkdirSync,
-  mkdtempSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -16,9 +9,7 @@ let base: string;
 let file: string;
 
 beforeEach(() => {
-  base = mkdtempSync(
-    path.join(tmpdir(), "spotless-for-gradle-and-maven-gradle-"),
-  );
+  base = mkdtempSync(path.join(tmpdir(), "spotless-for-gradle-and-maven-gradle-"));
   file = path.join(base, "A.java");
   writeFileSync(file, "");
 });
@@ -58,11 +49,7 @@ function request(signal = new AbortController().signal) {
 
 describe("gradleArgs", () => {
   it("routes Spotless's input and output through files via the init script, so build script output never ends up in the source", async () => {
-    const args = await gradleArgs(
-      file,
-      files,
-      "/ext/spotless-for-gradle-and-maven.gradle",
-    );
+    const args = await gradleArgs(file, files, "/ext/spotless-for-gradle-and-maven.gradle");
     expect(args).toEqual(
       expect.arrayContaining([
         "--init-script",
@@ -80,14 +67,8 @@ describe("gradleArgs", () => {
     mkdirSync(path.join(base, "real"));
     writeFileSync(path.join(base, "real", "B.java"), "");
     symlinkSync(path.join(base, "real"), path.join(base, "link"));
-    const args = await gradleArgs(
-      path.join(base, "link", "B.java"),
-      files,
-      "/init.gradle",
-    );
-    expect(args).toContain(
-      `-PspotlessIdeHook=${realpathSync(path.join(base, "real", "B.java"))}`,
-    );
+    const args = await gradleArgs(path.join(base, "link", "B.java"), files, "/init.gradle");
+    expect(args).toContain(`-PspotlessIdeHook=${realpathSync(path.join(base, "real", "B.java"))}`);
   });
 });
 
@@ -101,8 +82,7 @@ describe("runGradle", () => {
   it("reports a failed build with its output and error, so the log explains why nothing was formatted", async () => {
     const { api } = fakeGradle((options) => {
       options.onOutput({
-        getOutputBytes_asU8: () =>
-          new TextEncoder().encode("Task 'spotlessApply' not found"),
+        getOutputBytes_asU8: () => new TextEncoder().encode("Task 'spotlessApply' not found"),
       });
       return Promise.reject(new Error("Build failed"));
     });
@@ -113,9 +93,7 @@ describe("runGradle", () => {
   });
 
   it("settles as soon as the save is cancelled and cancels the build, even when the Gradle server never answers", async () => {
-    const { api, runs, cancelled } = fakeGradle(
-      () => new Promise<void>(() => undefined),
-    );
+    const { api, runs, cancelled } = fakeGradle(() => new Promise<void>(() => undefined));
     const controller = new AbortController();
     const running = runGradle(request(controller.signal), api, "/init.gradle");
     await expect.poll(() => runs.length).toBe(1);
@@ -128,9 +106,7 @@ describe("runGradle", () => {
     const { api, runs } = fakeGradle(() => Promise.resolve());
     const controller = new AbortController();
     controller.abort();
-    await expect(
-      runGradle(request(controller.signal), api, "/init.gradle"),
-    ).rejects.toThrow();
+    await expect(runGradle(request(controller.signal), api, "/init.gradle")).rejects.toThrow();
     expect(runs).toEqual([]);
   });
 });

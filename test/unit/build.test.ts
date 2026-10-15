@@ -19,9 +19,7 @@ function source(relative: string): string {
 }
 
 beforeEach(() => {
-  workspace = mkdtempSync(
-    path.join(tmpdir(), "spotless-for-gradle-and-maven-build-"),
-  );
+  workspace = mkdtempSync(path.join(tmpdir(), "spotless-for-gradle-and-maven-build-"));
 });
 
 afterEach(() => {
@@ -57,9 +55,7 @@ describe("detectBuild for Gradle", () => {
 describe("detectBuild for Maven", () => {
   it("runs the topmost pom as the reactor root and selects the nearest pom as the module, so parent configuration applies", () => {
     touch("pom.xml", "core/pom.xml", "core/api/pom.xml");
-    expect(
-      detectBuild(source("core/api/src/main/java/A.java"), workspace),
-    ).toEqual({
+    expect(detectBuild(source("core/api/src/main/java/A.java"), workspace)).toEqual({
       tool: "maven",
       root: workspace,
       module: path.join(workspace, "core/api"),
@@ -87,9 +83,11 @@ describe("detectBuild for Maven", () => {
       path.dirname(workspace),
       path.basename(workspace).toUpperCase(),
     );
-    expect(
-      detectBuild(source("src/main/java/A.java"), folderWithOtherCase),
-    ).toEqual({ tool: "maven", root: workspace, module: workspace });
+    expect(detectBuild(source("src/main/java/A.java"), folderWithOtherCase)).toEqual({
+      tool: "maven",
+      root: workspace,
+      module: workspace,
+    });
   });
 });
 

@@ -28,22 +28,20 @@ describe("SerialQueue", () => {
     const queue = new SerialQueue();
     const blocked = Promise.withResolvers<undefined>();
     void queue.run("maven", neverAborted, () => blocked.promise);
-    await expect(
-      queue.run("gradle", neverAborted, () => Promise.resolve("done")),
-    ).resolves.toBe("done");
+    await expect(queue.run("gradle", neverAborted, () => Promise.resolve("done"))).resolves.toBe(
+      "done",
+    );
     blocked.resolve(undefined);
   });
 
   it("keeps working after a request fails, so one syntax error does not break every later save", async () => {
     const queue = new SerialQueue();
     await expect(
-      queue.run("root", neverAborted, () =>
-        Promise.reject(new Error("build failed")),
-      ),
+      queue.run("root", neverAborted, () => Promise.reject(new Error("build failed"))),
     ).rejects.toThrow("build failed");
-    await expect(
-      queue.run("root", neverAborted, () => Promise.resolve("formatted")),
-    ).resolves.toBe("formatted");
+    await expect(queue.run("root", neverAborted, () => Promise.resolve("formatted"))).resolves.toBe(
+      "formatted",
+    );
   });
 
   it("skips a request cancelled while it waited, so a skipped save does not start a build", async () => {

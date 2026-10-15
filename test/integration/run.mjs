@@ -17,9 +17,7 @@ const cache = path.join(root, ".cache");
 const fixtures = path.join(import.meta.dirname, "fixtures");
 const prepared = path.join(cache, "fixtures");
 const windows = process.platform === "win32";
-const pathKey =
-  Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ??
-  "PATH";
+const pathKey = Object.keys(process.env).find((key) => key.toUpperCase() === "PATH") ?? "PATH";
 
 function javaHome() {
   const home = process.env[`JAVA_HOME_${profile.jdk}`] ?? process.env.JAVA_HOME;
@@ -48,11 +46,9 @@ const java = javaHome();
 const env = {
   ...process.env,
   JAVA_HOME: java,
-  [pathKey]: [
-    path.join(java, "bin"),
-    path.join(mvndHome(), "bin"),
-    process.env[pathKey],
-  ].join(path.delimiter),
+  [pathKey]: [path.join(java, "bin"), path.join(mvndHome(), "bin"), process.env[pathKey]].join(
+    path.delimiter,
+  ),
   GRADLE_USER_HOME: path.join(cache, "gradle"),
   MAVEN_USER_HOME: path.join(cache, "maven-user-home"),
   MVND_DAEMON_STORAGE: path.join(cache, "mvnd"),
@@ -109,8 +105,7 @@ function copyFixtures(from, to) {
   rmSync(to, { recursive: true, force: true });
   cpSync(from, to, {
     recursive: true,
-    filter: (source) =>
-      !["target", "build", ".gradle"].includes(path.basename(source)),
+    filter: (source) => !["target", "build", ".gradle"].includes(path.basename(source)),
   });
   for (const dir of projects(to, "maven", "pom.xml")) {
     rewrite(
@@ -205,17 +200,9 @@ for (const project of ["formatter-config", "hang-extension"]) {
   ]);
 }
 for (const dir of projects(prepared, "maven", "pom.xml")) {
-  mustRun(
-    "mvn",
-    ["-q", "-B", "com.diffplug.spotless:spotless-maven-plugin:check"],
-    dir,
-  );
+  mustRun("mvn", ["-q", "-B", "com.diffplug.spotless:spotless-maven-plugin:check"], dir);
 }
-mustRun(
-  wrapper("mvnw"),
-  ["-q", "-B", "validate"],
-  path.join(prepared, "maven", "single"),
-);
+mustRun(wrapper("mvnw"), ["-q", "-B", "validate"], path.join(prepared, "maven", "single"));
 for (const dir of projects(prepared, "gradle", "settings.gradle")) {
   mustRun(wrapper("gradlew"), ["-q", "spotlessCheck"], dir);
 }
@@ -224,9 +211,7 @@ const status = run(
   "vscode-test",
   process.argv.slice(2),
   root,
-  windows
-    ? unusualWorkspace()
-    : { SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_FIXTURES: prepared },
+  windows ? unusualWorkspace() : { SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_FIXTURES: prepared },
 );
 
 run("mvnd", ["--stop"]);

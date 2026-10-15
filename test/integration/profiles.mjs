@@ -3,16 +3,11 @@ import * as path from "node:path";
 import process from "node:process";
 
 const pkg = JSON.parse(
-  readFileSync(
-    path.join(import.meta.dirname, "..", "..", "package.json"),
-    "utf8",
-  ),
+  readFileSync(path.join(import.meta.dirname, "..", "..", "package.json"), "utf8"),
 );
 const minimumVSCode = /^\^(\d+\.\d+\.\d+)$/.exec(pkg.engines.vscode)?.[1];
 if (minimumVSCode === undefined) {
-  throw new Error(
-    `engines.vscode must look like ^1.100.0, not ${pkg.engines.vscode}`,
-  );
+  throw new Error(`engines.vscode must look like ^1.100.0, not ${pkg.engines.vscode}`);
 }
 
 const latest = {
@@ -48,6 +43,5 @@ if (!Object.hasOwn(profiles, name)) {
 export const profile = {
   ...profiles[name],
   gradleForJava:
-    process.env.SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA ??
-    profiles[name].gradleForJava,
+    process.env.SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA ?? profiles[name].gradleForJava,
 };

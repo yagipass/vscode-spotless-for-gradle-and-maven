@@ -17,10 +17,7 @@ export type Build = GradleBuild | MavenBuild;
 const gradleSettings = ["settings.gradle", "settings.gradle.kts"];
 const gradleMarkers = [...gradleSettings, "build.gradle", "build.gradle.kts"];
 
-export function detectBuild(
-  file: string,
-  workspaceFolder: string,
-): Build | undefined {
+export function detectBuild(file: string, workspaceFolder: string): Build | undefined {
   const dirs = ancestors(file, workspaceFolder);
   for (const [index, dir] of dirs.entries()) {
     if (has(dir, gradleMarkers)) {
@@ -40,8 +37,7 @@ function has(dir: string, names: string[]): boolean {
 }
 
 function ancestors(file: string, workspaceFolder: string): string[] {
-  const depth = (dir: string) =>
-    dir.split(path.sep).filter((segment) => segment !== "").length;
+  const depth = (dir: string) => dir.split(path.sep).filter((segment) => segment !== "").length;
   const dirs: string[] = [];
   let dir = path.dirname(file);
   for (let level = depth(dir) - depth(workspaceFolder); level >= 0; level--) {

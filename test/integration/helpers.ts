@@ -32,10 +32,7 @@ export function placeholder(className: string): string {
 const created: string[] = [];
 const restored = new Map<string, Buffer>();
 
-export async function createFile(
-  file: string,
-  content: string | Uint8Array,
-): Promise<vscode.Uri> {
+export async function createFile(file: string, content: string | Uint8Array): Promise<vscode.Uri> {
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, content);
   created.push(file);
@@ -121,8 +118,8 @@ suiteSetup(waitForSaveParticipants);
 function spotlessLog(): string {
   const dir = process.env["SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_LOGS"];
   assert.ok(dir, "SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_LOGS is not set");
-  const file = readdirSync(dir, { recursive: true, encoding: "utf8" }).find(
-    (name) => name.endsWith("Spotless for Gradle and Maven.log"),
+  const file = readdirSync(dir, { recursive: true, encoding: "utf8" }).find((name) =>
+    name.endsWith("Spotless for Gradle and Maven.log"),
   );
   return file === undefined ? "" : readFileSync(path.join(dir, file), "utf8");
 }
@@ -141,10 +138,7 @@ export async function expectLog(pattern: RegExp): Promise<void> {
   assert.fail(`The log does not match ${String(pattern)}:\n${spotlessLog()}`);
 }
 
-export async function waitUntil(
-  condition: () => boolean,
-  message: string,
-): Promise<void> {
+export async function waitUntil(condition: () => boolean, message: string): Promise<void> {
   for (let attempt = 0; attempt < 1200; attempt++) {
     if (condition()) {
       return;
@@ -197,14 +191,8 @@ export async function expectFormattedOnSave(
   className: string,
   decorate: (text: string) => string = (text) => text,
 ): Promise<void> {
-  const uri = await createFile(
-    path.join(dir, `${className}.java`),
-    placeholder(className),
-  );
-  const document = await openWithUnsavedText(
-    uri,
-    decorate(unformatted(className)),
-  );
+  const uri = await createFile(path.join(dir, `${className}.java`), placeholder(className));
+  const document = await openWithUnsavedText(uri, decorate(unformatted(className)));
   await save(document);
   assert.equal(document.getText(), decorate(googleFormatted(className)));
   assert.equal(await readDisk(uri), decorate(googleFormatted(className)));
@@ -224,9 +212,7 @@ export function commonSuite(options: {
       placeholder("TmpCommand"),
     );
     const document = await openWithUnsavedText(uri, unformatted("TmpCommand"));
-    await vscode.commands.executeCommand(
-      "spotlessForGradleAndMaven.formatDocument",
-    );
+    await vscode.commands.executeCommand("spotlessForGradleAndMaven.formatDocument");
     assert.equal(document.getText(), googleFormatted("TmpCommand"));
     assert.ok(document.isDirty);
     assert.equal(await readDisk(uri), placeholder("TmpCommand"));
@@ -237,10 +223,7 @@ export function commonSuite(options: {
       path.join(options.sourceDir(), "TmpClean.java"),
       placeholder("TmpClean"),
     );
-    const document = await openWithUnsavedText(
-      uri,
-      googleFormatted("TmpClean"),
-    );
+    const document = await openWithUnsavedText(uri, googleFormatted("TmpClean"));
     await save(document);
     assert.equal(document.getText(), googleFormatted("TmpClean"));
     await expectLog(/TmpClean\.java: clean/);
@@ -253,9 +236,7 @@ export function commonSuite(options: {
     const document = await openWithUnsavedText(uri, edited);
     await save(document);
     assert.equal(document.getText(), edited);
-    await expectLog(
-      new RegExp(`${escapeRegExp(path.basename(uri.fsPath))}: notCovered`),
-    );
+    await expectLog(new RegExp(`${escapeRegExp(path.basename(uri.fsPath))}: notCovered`));
   });
 
   test("does not run a build just to list code actions, so the lightbulb and the Source Action menu stay cheap", async () => {
@@ -273,10 +254,7 @@ export function commonSuite(options: {
           range,
           kind,
         )
-      ).filter(
-        (action) =>
-          action.kind?.value === "source.fixAll.spotlessForGradleAndMaven",
-      );
+      ).filter((action) => action.kind?.value === "source.fixAll.spotlessForGradleAndMaven");
     assert.equal((await listed()).length, 0);
     const menu = await listed("source");
     assert.equal(menu.length, 1);
@@ -285,9 +263,7 @@ export function commonSuite(options: {
       path.join(options.sourceDir(), "TmpAfterMenu.java"),
       placeholder("TmpAfterMenu"),
     );
-    await save(
-      await openWithUnsavedText(later, googleFormatted("TmpAfterMenu")),
-    );
+    await save(await openWithUnsavedText(later, googleFormatted("TmpAfterMenu")));
     await expectLog(/TmpAfterMenu\.java: clean/);
     assert.doesNotMatch(spotlessLog(), /TmpMenu\.java/);
     assert.equal(document.getText(), unformatted("TmpMenu"));
@@ -299,10 +275,7 @@ export function commonSuite(options: {
       path.join(options.sourceDir(), "TmpCrlf.java"),
       crlf(placeholder("TmpCrlf")),
     );
-    const document = await openWithUnsavedText(
-      uri,
-      crlf(unformatted("TmpCrlf")),
-    );
+    const document = await openWithUnsavedText(uri, crlf(unformatted("TmpCrlf")));
     assert.equal(document.eol, vscode.EndOfLine.CRLF);
     await save(document);
     assert.equal(document.eol, vscode.EndOfLine.LF);
@@ -314,10 +287,7 @@ export function commonSuite(options: {
       path.join(options.sourceDir(), "twoformats", "TmpTwoFormats.java"),
       placeholder("TmpTwoFormats"),
     );
-    const document = await openWithUnsavedText(
-      uri,
-      unformatted("TmpTwoFormats"),
-    );
+    const document = await openWithUnsavedText(uri, unformatted("TmpTwoFormats"));
     await save(document);
     assert.equal(document.getText(), unformatted("TmpTwoFormats"));
     await expectLog(
@@ -330,8 +300,7 @@ export function commonSuite(options: {
       path.join(options.sourceDir(), "TmpBroken.java"),
       placeholder("TmpBroken"),
     );
-    const broken =
-      "package com.example;\npublic class TmpBroken {\nint x = ;\n";
+    const broken = "package com.example;\npublic class TmpBroken {\nint x = ;\n";
     const document = await openWithUnsavedText(uri, broken);
     await save(document);
     assert.equal(document.getText(), broken);
@@ -342,8 +311,7 @@ export function commonSuite(options: {
 
 export function shiftJisTest(sourceDir: () => string): void {
   test("round-trips Japanese text in a Shift_JIS file without mojibake", async () => {
-    const encode = (text: string) =>
-      vscode.workspace.encode(text, { encoding: "shiftjis" });
+    const encode = (text: string) => vscode.workspace.encode(text, { encoding: "shiftjis" });
     const uri = await createFile(
       path.join(sourceDir(), "TmpSjis.java"),
       await encode(placeholder("TmpSjis")),
@@ -355,9 +323,6 @@ export function shiftJisTest(sourceDir: () => string): void {
     const document = await openWithUnsavedText(uri, dirty, "shiftjis");
     await save(document);
     assert.equal(document.getText(), formatted);
-    assert.deepEqual(
-      await readFile(uri.fsPath),
-      Buffer.from(await encode(formatted)),
-    );
+    assert.deepEqual(await readFile(uri.fsPath), Buffer.from(await encode(formatted)));
   });
 }
