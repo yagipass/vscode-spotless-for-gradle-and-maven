@@ -1,0 +1,81 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["./oxlint-plugin.mjs"],
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": ["test/integration/fixtures/"],
+  "rules": {
+    "local/no-comments": "error",
+    "no-restricted-properties": [
+      "error",
+      {
+        "property": "onWillSaveTextDocument",
+        "message": "Its 1.5s budget is too short for a build and VS Code stops calling it after repeated overruns."
+      },
+      {
+        "property": "registerDocumentFormattingEditProvider",
+        "message": "A second formatter per language silently disables the user's formatOnSave."
+      },
+      {
+        "property": "registerDocumentRangeFormattingEditProvider",
+        "message": "A second formatter per language silently disables the user's formatOnSave."
+      },
+      {
+        "property": "showErrorMessage",
+        "message": "Formatting fails often while editing; log it instead of notifying."
+      },
+      {
+        "property": "showWarningMessage",
+        "message": "Formatting fails often while editing; log it instead of notifying."
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "node:child_process",
+            "importNames": ["exec", "execSync"],
+            "message": "Spawn without a shell."
+          },
+          {
+            "name": "child_process",
+            "message": "Import node:child_process."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["test/unit/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "vscode",
+                "message": "Unit tests must not depend on VS Code."
+              },
+              {
+                "name": "node:child_process",
+                "importNames": ["exec", "execSync"],
+                "message": "Spawn without a shell."
+              },
+              {
+                "name": "child_process",
+                "message": "Import node:child_process."
+              },
+              {
+                "name": "node:child_process",
+                "message": "Unit tests must not start external processes."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
