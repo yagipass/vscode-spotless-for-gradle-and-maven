@@ -1,0 +1,18 @@
+title = "vscode-spotless-for-gradle-and-maven"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated build output is never committed, but keep it out of manual scans."
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)out/''',
+  '''(^|/)\.vscode-test/''',
+  '''(^|/)\.cache/''',
+  '''(^|/)target/''',
+  '''(^|/)build/''',
+  '''(^|/)bin/''',
+  '''(^|/)\.gradle/''',
+]

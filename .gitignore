@@ -11,3 +11,4 @@ test/integration/fixtures/**/.gradle/
 .cache/
 test/integration/fixtures/**/Tmp*.java
 .work/
+.pre-commit-config.yaml
