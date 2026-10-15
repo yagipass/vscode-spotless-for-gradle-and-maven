@@ -3,35 +3,46 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
-    { self, nixpkgs }:
-    let
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ inputs.treefmt-nix.flakeModule ];
+
       systems = [
         "aarch64-darwin"
         "aarch64-linux"
         "x86_64-linux"
       ];
-      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
-      mvnd103 = {
-        aarch64-darwin = {
-          platform = "darwin-aarch64";
-          hash = "sha256-tVKMktWw4UqKR93/E4wZ2TrAH2y4ooUU+PpA8s62UZQ=";
-        };
-        x86_64-linux = {
-          platform = "linux-amd64";
-          hash = "sha256-Pd1HQbDnDCRe0WS0V3S3KhkzEpSy1hR1cMjFJxqXfow=";
-        };
-      };
-    in
-    {
-      devShells = forAllSystems (
-        pkgs:
+
+      perSystem =
+        {
+          pkgs,
+          lib,
+          system,
+          ...
+        }:
         let
-          lib = pkgs.lib;
-          system = pkgs.stdenv.hostPlatform.system;
           jdk = pkgs.jdk21;
+          mvnd103 = {
+            aarch64-darwin = {
+              platform = "darwin-aarch64";
+              hash = "sha256-tVKMktWw4UqKR93/E4wZ2TrAH2y4ooUU+PpA8s62UZQ=";
+            };
+            x86_64-linux = {
+              platform = "linux-amd64";
+              hash = "sha256-Pd1HQbDnDCRe0WS0V3S3KhkzEpSy1hR1cMjFJxqXfow=";
+            };
+          };
           mvndHome = version: home: {
             "MVND_HOME_${lib.replaceStrings [ "." ] [ "_" ] version}" = "${home}";
           };
@@ -56,7 +67,12 @@
             };
         in
         {
-          default = pkgs.mkShell {
+          treefmt = {
+            projectRootFile = "flake.nix";
+            programs.nixfmt.enable = true;
+          };
+
+          devShells.default = pkgs.mkShell {
             packages = [
               pkgs.nodejs_24
               pkgs.pnpm
@@ -76,7 +92,6 @@
               mvndHome "1.0.3" (mvndRelease "1.0.3" mvnd103.${system})
             );
           };
-        }
-      );
+        };
     };
 }

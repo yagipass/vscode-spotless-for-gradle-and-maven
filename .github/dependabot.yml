@@ -38,8 +38,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    allow:
-      - dependency-name: nixpkgs
     commit-message:
       prefix: build
       include: scope
+    groups:
+      flake-inputs:
+        patterns: ["*"]
