@@ -82,4 +82,4 @@ The extension sends no telemetry. To format a file, it writes the unsaved buffer
 
 ## Acknowledgements
 
-Inspired by [Spotless Gradle](https://github.com/badsyntax/vscode-spotless-gradle) by Richard Willis.
+Inspired by [Spotless Gradle](https://github.com/badsyntax/vscode-spotless-gradle) by Richard Willis and [Spotless Maven](https://github.com/SapiensAnatis/vscode-spotless-maven) by Jay Malhotra.
