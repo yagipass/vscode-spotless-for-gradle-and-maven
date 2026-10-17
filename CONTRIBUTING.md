@@ -26,3 +26,7 @@ pnpm test:integration
 - `--label gradle` to run only the Gradle tests
 - `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_PROFILE=oldest` to use the oldest supported versions in `test/integration/profiles.mjs`
 - `SPOTLESS_FOR_GRADLE_AND_MAVEN_TEST_GRADLE_FOR_JAVA=<version>` to use another Gradle for Java; `node scripts/newest-gradle-for-java.mjs stable` or `pre-release` prints the newest
+
+## Repository settings
+
+Maintainers apply them with [gh-infra](https://github.com/babarot/gh-infra): `gh infra apply .github/infra.yml`. The `marketplace` environment and its secrets, code scanning and secret scanning are set on GitHub instead.
