@@ -1,5 +1,24 @@
 # Changelog
 
+## [v1.0.1](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.0...v1.0.1) - 2026-10-17
+
+- build(deps-dev): bump prettier from 3.9.9 to 3.9.10 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/59
+- build(deps): bump nixpkgs from `151fa4e` to `6510408` by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/60
+- build: publish to Open VSX with trusted publishing instead of a token by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/63
+- build: format with oxfmt instead of prettier by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/65
+- style: reformat with oxfmt defaults by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/66
+- build: lint with oxlint instead of eslint by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/69
+- build: format the Nix files with nix fmt and check them in CI by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/73
+- build: check secrets, commit messages and whitespace in Git hooks by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/74
+- build: take nixpkgs from nixpkgs-unstable and drop the unused Gradle by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/75
+- build(deps-dev): bump typescript from 6.0.3 to 7.0.2 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/78
+- build(deps-dev): bump oxlint-tsgolint from 7.0.2003 to 7.0.2004 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/79
+- test: turn off snippet code actions so a save is not left unformatted by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/80
+- build: lock GitHub Actions dependencies with a workflow lockfile by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/82
+- build: fix the jactionlint findings in the workflows and Dependabot by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/85
+- docs: credit Spotless Maven in the README acknowledgements by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/86
+- build: manage the repository settings with gh infra by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/88
+
 ## [v1.0.0](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/commits/v1.0.0) - 2026-10-13
 
 - build: run lint, type checks and tests on every pull request by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/4
