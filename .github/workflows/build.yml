@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -16,6 +20,7 @@ defaults:
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -95,6 +100,7 @@ jobs:
     if: github.event_name == 'push'
     needs: [checks, integration]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       pull-requests: write
@@ -114,6 +120,7 @@ jobs:
     if: needs.tagpr.outputs.tag != ''
     needs: tagpr
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: marketplace
     permissions:
       contents: write
@@ -127,9 +134,6 @@ jobs:
           ref: ${{ needs.tagpr.outputs.tag }}
           persist-credentials: false
       - uses: cachix/install-nix-action@v31.11.1
-      - uses: nix-community/cache-nix-action@v7.0.2
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
       - run: test "v$(node -p 'require("./package.json").version')" = "$TAG"
       - run: pnpm install --frozen-lockfile
       - run: pnpm package
