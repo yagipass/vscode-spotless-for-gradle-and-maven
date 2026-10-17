@@ -1,7 +1,7 @@
 {
   "name": "vscode-spotless-for-gradle-and-maven",
   "displayName": "Spotless for Gradle and Maven",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Format on save with the Spotless configuration of your Gradle or Maven build.",
   "categories": [
     "Formatters"
