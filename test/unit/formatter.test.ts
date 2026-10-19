@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -82,7 +82,7 @@ function setUp(backends: Backends) {
   });
   const format = (document: FormatTarget, signal = new AbortController().signal) =>
     formatter.format(document, workspace, signal);
-  return { format, lines, statuses };
+  return { formatter, format, lines, statuses };
 }
 
 function applyLikeTheEditor(original: string, eol: string, edit: FormatEdit | undefined): string {
@@ -172,6 +172,43 @@ describe("SpotlessFormatter", () => {
       }),
     );
     await expect(format(new FakeDocument("x\n"), controller.signal)).resolves.toBeUndefined();
+  });
+
+  it("stops the running build and deletes the copy of the buffer before stop() resolves, so quitting VS Code leaves neither behind", async () => {
+    const started = Promise.withResolvers<string>();
+    let buildEnded = false;
+    const { formatter, format } = setUp({
+      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
+      maven: ({ hookFiles, signal }) => {
+        started.resolve(hookFiles.stdin);
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => {
+            setTimeout(() => {
+              buildEnded = true;
+              reject(signal.reason as Error);
+            }, 50);
+          });
+        });
+      },
+    });
+    const formatting = format(new FakeDocument("unsaved secret\n"));
+    const stdin = await started.promise;
+    await formatter.stop();
+    expect(buildEnded).toBe(true);
+    expect(existsSync(stdin)).toBe(false);
+    await expect(formatting).resolves.toBeUndefined();
+  });
+
+  it("starts no build for a save that arrives after stop(), so nothing is left running once VS Code has quit", async () => {
+    let builds = 0;
+    const { formatter, format } = setUp(
+      mavenBuild(dirty, () => {
+        builds++;
+      }),
+    );
+    await formatter.stop();
+    await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
+    expect(builds).toBe(0);
   });
 });
 

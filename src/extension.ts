@@ -6,6 +6,8 @@ import { runMaven } from "./maven";
 const codeActionKind = vscode.CodeActionKind.SourceFixAll.append("spotlessForGradleAndMaven");
 const gradleExtensionId = "vscjava.vscode-gradle";
 
+let stopFormatting: (() => Promise<void>) | undefined;
+
 class SpotlessCodeAction extends vscode.CodeAction {
   constructor(readonly document: vscode.TextDocument) {
     super("Format with Spotless", codeActionKind);
@@ -50,6 +52,10 @@ export function activate(context: vscode.ExtensionContext): void {
     log,
     (message) => vscode.window.setStatusBarMessage(message, 5000),
   );
+  stopFormatting = async () => {
+    await formatter.stop();
+    log.dispose();
+  };
 
   const computeEdit = async (
     document: vscode.TextDocument,
@@ -114,12 +120,15 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   context.subscriptions.push(
-    log,
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, codeActionProvider, {
       providedCodeActionKinds: [codeActionKind],
     }),
     vscode.commands.registerCommand("spotlessForGradleAndMaven.formatDocument", formatDocument),
   );
+}
+
+export async function deactivate(): Promise<void> {
+  await stopFormatting?.();
 }
 
 function toAbortSignal(token: vscode.CancellationToken): AbortSignal {

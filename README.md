@@ -78,7 +78,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 
 ## Privacy
 
-The extension sends no telemetry. To format a file, it writes the unsaved buffer to a new folder under the temp folder, runs your build on it locally, and deletes the folder when the build ends. If VS Code quits before then, the folder is left behind.
+The extension sends no telemetry. To format a file, it writes the unsaved buffer to a new folder under the temp folder, runs your build on it locally, and deletes the folder when the build ends or VS Code quits. The folder is left behind only if VS Code crashes or the build does not stop within 5 seconds of quitting.
 
 ## Acknowledgements
 

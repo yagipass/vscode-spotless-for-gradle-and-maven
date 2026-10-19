@@ -59,4 +59,24 @@ describe("SerialQueue", () => {
     await expect(cancelled).rejects.toThrow();
     expect(started).toBe(false);
   });
+
+  it("becomes idle only after every request has settled, failed ones included, so shutdown waits for the builds it stopped", async () => {
+    const queue = new SerialQueue();
+    const slow = Promise.withResolvers<undefined>();
+    const events: string[] = [];
+    void queue.run("maven", neverAborted, async () => {
+      await slow.promise;
+      events.push("maven settled");
+    });
+    const failed = queue.run("gradle", neverAborted, () =>
+      Promise.reject(new Error("build failed")),
+    );
+    const idle = queue.idle().then(() => {
+      events.push("idle");
+    });
+    await expect(failed).rejects.toThrow("build failed");
+    slow.resolve(undefined);
+    await idle;
+    expect(events).toEqual(["maven settled", "idle"]);
+  });
 });

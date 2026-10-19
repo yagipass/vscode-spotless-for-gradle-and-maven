@@ -13,4 +13,8 @@ export class SerialQueue {
     );
     return current;
   }
+
+  async idle(): Promise<void> {
+    await Promise.all(this.tails.values());
+  }
 }
