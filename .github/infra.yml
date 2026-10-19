@@ -64,6 +64,8 @@ spec:
       color: ededed
     - name: tagpr:major
       color: 99733A
+    - name: tagpr:minor
+      color: C5DEF5
     - name: wontfix
       description: This will not be worked on
       color: ffffff
