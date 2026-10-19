@@ -2,6 +2,9 @@ package com.example;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.maven.AbstractMavenLifecycleParticipant;
@@ -23,9 +26,15 @@ public class Hang extends AbstractMavenLifecycleParticipant {
     }
     try {
       hanging.getParentFile().mkdirs();
-      hanging.createNewFile();
-      Thread.sleep(Long.MAX_VALUE);
-    } catch (IOException | InterruptedException e) {
+      String jvm = ManagementFactory.getRuntimeMXBean().getName();
+      Files.write(hanging.toPath(), jvm.getBytes(StandardCharsets.UTF_8));
+      try {
+        Thread.sleep(Long.MAX_VALUE);
+      } catch (InterruptedException e) {
+        new File(hanging.getParentFile(), "interrupted").createNewFile();
+        throw new MavenExecutionException(e.toString(), e);
+      }
+    } catch (IOException e) {
       throw new MavenExecutionException(e.toString(), e);
     }
   }

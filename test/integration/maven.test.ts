@@ -1,6 +1,6 @@
 import * as assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -70,9 +70,11 @@ suite(`Maven Shift_JIS sources (${expectedExecutable})`, () => {
 });
 
 suite(`Maven cancellation (${expectedExecutable})`, () => {
-  test("stops the build when the user cancels a slow save, so no build process is left running", async () => {
+  test("stops the build when the user cancels a slow save, even when it runs in the mvnd daemon, so no build is left running", async () => {
     const hanging = workspacePath("hang", "target", "hanging");
+    const interrupted = workspacePath("hang", "target", "interrupted");
     await rm(hanging, { force: true });
+    await rm(interrupted, { force: true });
     const uri = await createFile(
       path.join(sourceDir("hang"), "TmpCancel.java"),
       placeholder("TmpCancel"),
@@ -84,5 +86,20 @@ suite(`Maven cancellation (${expectedExecutable})`, () => {
     await cancelSave(saving);
     assert.equal(document.getText(), unformatted("TmpCancel"));
     await expectNoProcess("TmpCancel.java");
+    const jvm = Number((await readFile(hanging, "utf8")).split("@")[0]);
+    assert.ok(Number.isInteger(jvm) && jvm > 0, `${hanging} does not start with a PID`);
+    await waitUntil(
+      () => existsSync(interrupted) || !isRunning(jvm),
+      "the cancelled build kept running in the Maven JVM",
+    );
   });
 });
+
+function isRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+}
