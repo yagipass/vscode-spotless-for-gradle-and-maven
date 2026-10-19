@@ -3,3 +3,4 @@
 	versionFile = package.json
 	vPrefix = true
 	release = draft
+	minorLabels = enhancement
