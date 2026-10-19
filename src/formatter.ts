@@ -42,6 +42,7 @@ export interface Logger {
 
 export class SpotlessFormatter {
   private readonly queue = new SerialQueue();
+  private readonly stopping = new AbortController();
 
   constructor(
     private readonly backends: Backends,
@@ -63,7 +64,13 @@ export class SpotlessFormatter {
     }
     const version = document.version;
     const text = document.getText();
-    const output = await this.run(build, file, text, document.encoding, signal);
+    const output = await this.run(
+      build,
+      file,
+      text,
+      document.encoding,
+      AbortSignal.any([signal, this.stopping.signal]),
+    );
     if (output === undefined) {
       return undefined;
     }
@@ -79,6 +86,11 @@ export class SpotlessFormatter {
       return undefined;
     }
     return toFormatEdit(text, document.eol === 2 ? "\r\n" : "\n", result.formatted);
+  }
+
+  async stop(): Promise<void> {
+    this.stopping.abort();
+    await this.queue.idle();
   }
 
   private async run(
