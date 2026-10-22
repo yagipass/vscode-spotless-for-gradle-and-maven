@@ -5,18 +5,18 @@ version: 'v0.0.3'
 workflows:
     '.github/workflows/build.yml':
         - 'actions/checkout@v7.0.1'
-        - 'actions/setup-java@v6.0.1'
+        - 'actions/setup-java@v6.1.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
         - 'azure/login@v3.1.0'
-        - 'cachix/install-nix-action@v31.11.1'
+        - 'cachix/install-nix-action@v31.11.2'
         - 'nix-community/cache-nix-action@v7.0.2'
         - 'pnpm/action-setup@v6.1.0'
         - 'songmu/tagpr@v1.21.2'
     '.github/workflows/gradle-for-java.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/upload-artifact@v7.0.2'
-        - 'cachix/install-nix-action@v31.11.1'
+        - 'cachix/install-nix-action@v31.11.2'
         - 'nix-community/cache-nix-action@v7.0.2'
     '.github/workflows/labeler.yml':
         - 'actions/labeler@v7.0.0'
@@ -31,9 +31,9 @@ dependencies:
         commit: 'sha1-bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13'
         owner_id: 44036562
         repo_id: 177139928
-    'actions/setup-java@v6.0.1':
-        ref: 'v6.0.1'
-        commit: 'sha1-de7274f081f381c8f8158605e0321c36c376e2e6'
+    'actions/setup-java@v6.1.0':
+        ref: 'v6.1.0'
+        commit: 'sha1-b843ebf9b913146b38da2eaa7aeddf76074ae1ad'
         owner_id: 44036562
         repo_id: 196057608
     'actions/setup-node@v7.1.0':
@@ -51,9 +51,9 @@ dependencies:
         commit: 'sha1-a641126d1b8aa4d1fa005f4f92df94a3a4c4c906'
         owner_id: 6844498
         repo_id: 210798615
-    'cachix/install-nix-action@v31.11.1':
-        ref: 'v31.11.1'
-        commit: 'sha1-13d8dd58da0234aa297dedd986986ccb8e7f3e24'
+    'cachix/install-nix-action@v31.11.2':
+        ref: 'v31.11.2'
+        commit: 'sha1-448cde739abec1eaf0646249e3d25bb8d9bc7702'
         owner_id: 36824654
         repo_id: 212301524
     'nix-community/cache-nix-action@v7.0.2':
