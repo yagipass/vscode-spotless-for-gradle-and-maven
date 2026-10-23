@@ -33,6 +33,8 @@ To format on save, add this to your settings.
 
 Or run **Spotless: Format Document** from the Command Palette.
 
+To also run another code action on save, such as `source.organizeImports`, list them in an array that ends with Spotless, as in `["source.organizeImports", "source.fixAll.spotlessForGradleAndMaven"]`. In an object, VS Code runs Spotless first, so the other action can leave a file that fails `spotlessCheck`.
+
 ## Maven
 
 ### Requirements
@@ -54,6 +56,8 @@ To format on save, add this to your settings.
 ```
 
 Or run **Spotless: Format Document** from the Command Palette.
+
+To also run another code action on save, such as `source.organizeImports`, list them in an array that ends with Spotless, as in `["source.organizeImports", "source.fixAll.spotlessForGradleAndMaven"]`. In an object, VS Code runs Spotless first, so the other action can leave a file that fails `spotless:check`.
 
 ### Settings
 
