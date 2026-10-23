@@ -42,6 +42,8 @@ describe("mavenArgs", () => {
       "--define",
       "maven.ext.class.path=/ext/spotless-for-gradle-and-maven-extension.jar",
       "--define",
+      "spotlessForGradleAndMaven.module=/repo/core/api",
+      "--define",
       "spotlessForGradleAndMaven.stdin=/tmp/in",
       "--define",
       "spotlessForGradleAndMaven.stdout=/tmp/out",
@@ -86,6 +88,17 @@ describe("mavenArgs", () => {
       files,
     );
     expect(args.filter((arg) => arg.startsWith("-D"))).toEqual([]);
+  });
+
+  it("passes the file and its module as VS Code names them, so the bundled extension can name the file under the directory Maven builds the module in, which a symbolic link above the build root makes differ by OS and by mvn or mvnd", () => {
+    const args = mavenArgs(
+      { tool: "maven", root: "/link", module: "/link/core" },
+      "/link/core/src/A.java",
+      "/ext.jar",
+      files,
+    );
+    expect(args).toContain("spotlessForGradleAndMaven.module=/link/core");
+    expect(args).toContain("spotlessIdeHook=/link/core/src/A.java");
   });
 });
 

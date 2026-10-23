@@ -37,7 +37,11 @@ export function mavenArgs(
   hookFiles: HookFiles,
 ): string[] {
   const module = path.relative(build.root, build.module);
-  const properties = [`maven.ext.class.path=${extensionJar}`, ...hookProperties(file, hookFiles)];
+  const properties = [
+    `maven.ext.class.path=${extensionJar}`,
+    `spotlessForGradleAndMaven.module=${build.module}`,
+    ...hookProperties(file, hookFiles),
+  ];
   return [
     "-q",
     "-B",

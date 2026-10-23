@@ -1,6 +1,6 @@
 import * as assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { readFile, rm } from "node:fs/promises";
+import { readFile, rm, symlink } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -48,6 +48,14 @@ suite(`Maven multi-module build (${expectedExecutable})`, () => {
     await expectFormattedOnSave(sourceDir("multi", "app"), "TmpModule");
     await expectLog(/TmpModule\.java: dirty\n.* -pl app /);
   });
+});
+
+suite(`Maven build reached through a symbolic link (${expectedExecutable})`, () => {
+  suiteSetup(() => symlink(workspacePath("single"), workspacePath("linked"), "junction"));
+  suiteTeardown(() => rm(workspacePath("linked"), { force: true }));
+
+  test("formats a file whose build root is reached through a symbolic link, so a workspace opened through one is formatted too", () =>
+    expectFormattedOnSave(sourceDir("linked"), "TmpLinked"));
 });
 
 suite(`Maven configuration from a plugin dependency (${expectedExecutable})`, () => {
