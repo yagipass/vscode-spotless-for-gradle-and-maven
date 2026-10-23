@@ -63,6 +63,11 @@ describe("gradleArgs", () => {
     );
   });
 
+  it("runs the projects one at a time even when the build enables parallel execution, because the init script swaps System.in, System.out and System.err for the whole daemon JVM, so a Spotless task running at the same time would lose the buffer or the formatted output", async () => {
+    const args = await gradleArgs(file, files, "/init.gradle");
+    expect(args).toContain("--no-parallel");
+  });
+
   it("passes the real path of the file, because Gradle compares it with its canonical project directory and a symlinked workspace would never match", async () => {
     mkdirSync(path.join(base, "real"));
     writeFileSync(path.join(base, "real", "B.java"), "");
