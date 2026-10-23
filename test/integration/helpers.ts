@@ -309,9 +309,10 @@ export function commonSuite(options: {
   });
 
   test("formats after organize imports when the code actions on save are an array that ends with Spotless, as the README says, so the saved file passes spotlessCheck", async () => {
-    const editor = vscode.workspace.getConfiguration("editor");
-    const original = editor.inspect("codeActionsOnSave")?.workspaceValue;
-    const target = vscode.ConfigurationTarget.Workspace;
+    const settings = workspacePath(".vscode", "settings.json");
+    const original = await readFile(settings, "utf8");
+    const usesArray = () =>
+      Array.isArray(vscode.workspace.getConfiguration("editor").get("codeActionsOnSave"));
     const organizeImports = vscode.languages.registerCodeActionsProvider(
       { pattern: new vscode.RelativePattern(options.sourceDir(), "TmpImports.java") },
       {
@@ -331,12 +332,18 @@ export function commonSuite(options: {
       },
       { providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports] },
     );
-    await editor.update(
-      "codeActionsOnSave",
-      ["source.organizeImports", "source.fixAll.spotlessForGradleAndMaven"],
-      target,
-    );
     try {
+      await writeFile(
+        settings,
+        JSON.stringify({
+          ...(JSON.parse(original) as Record<string, unknown>),
+          "editor.codeActionsOnSave": [
+            "source.organizeImports",
+            "source.fixAll.spotlessForGradleAndMaven",
+          ],
+        }),
+      );
+      await waitUntil(usesArray, "VS Code did not load the changed settings.json");
       const uri = await createFile(
         path.join(options.sourceDir(), "TmpImports.java"),
         placeholder("TmpImports"),
@@ -351,7 +358,8 @@ export function commonSuite(options: {
         "package com.example;\n\nimport java.util.List;\nimport org.w3c.dom.Node;\n\npublic class TmpImports {\n  List<Node> nodes;\n}\n",
       );
     } finally {
-      await editor.update("codeActionsOnSave", original, target);
+      await writeFile(settings, original);
+      await waitUntil(() => !usesArray(), "VS Code did not load the restored settings.json");
       organizeImports.dispose();
     }
   });
