@@ -2,6 +2,7 @@ def properties = gradle.startParameter.projectProperties
 def stdinPath = properties['spotlessForGradleAndMaven.stdin']
 def stdoutPath = properties['spotlessForGradleAndMaven.stdout']
 def stderrPath = properties['spotlessForGradleAndMaven.stderr']
+def hookPath = properties['spotlessIdeHook']
 
 def unclosable(OutputStream stream) {
     new PrintStream(stream, true) {
@@ -11,7 +12,7 @@ def unclosable(OutputStream stream) {
     }
 }
 
-if (stdinPath != null && stdoutPath != null && stderrPath != null) {
+if (stdinPath != null && stdoutPath != null && stderrPath != null && hookPath != null) {
     def redirected = null
     gradle.taskGraph.beforeTask { task ->
         if (redirected == null && task.class.name.startsWith('com.diffplug.gradle.spotless.SpotlessTaskImpl')) {
@@ -43,6 +44,12 @@ if (stdinPath != null && stdoutPath != null && stderrPath != null) {
                 new FileOutputStream(stderrPath).close()
             }
             redirected = null
+        }
+    }
+    gradle.taskGraph.whenReady { graph ->
+        def file = new File(hookPath)
+        if (!file.isFile() || !Arrays.equals(file.bytes, new File(stdinPath).bytes)) {
+            graph.allTasks.findAll { it.class.name.startsWith('com.diffplug.gradle.spotless.SpotlessTaskImpl') }*.setupRatchet('')
         }
     }
 }
