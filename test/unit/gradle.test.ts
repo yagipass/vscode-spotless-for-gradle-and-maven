@@ -109,4 +109,15 @@ describe("runGradle", () => {
     await expect(runGradle(request(controller.signal), api, "/init.gradle")).rejects.toThrow();
     expect(runs).toEqual([]);
   });
+
+  it("refuses a file whose path contains a comma and says why, because the Spotless Gradle plugin splits the path at commas and then reports nothing at all", async () => {
+    mkdirSync(path.join(base, "a,b"));
+    const commaFile = path.join(base, "a,b", "A.java");
+    writeFileSync(commaFile, "");
+    const { api, runs } = fakeGradle(() => Promise.resolve());
+    await expect(runGradle({ ...request(), file: commaFile }, api, "/init.gradle")).rejects.toThrow(
+      "path contains a comma",
+    );
+    expect(runs).toEqual([]);
+  });
 });

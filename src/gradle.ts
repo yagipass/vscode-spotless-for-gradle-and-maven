@@ -24,7 +24,13 @@ export async function gradleArgs(
   hookFiles: HookFiles,
   initScript: string,
 ): Promise<string[]> {
-  const properties = hookProperties(await realpath(file), hookFiles);
+  const source = await realpath(file);
+  if (source.includes(",")) {
+    throw new Error(
+      "The Spotless Gradle plugin cannot format a file whose path contains a comma, because it reads the comma as a separator between files",
+    );
+  }
+  const properties = hookProperties(source, hookFiles);
   return [
     "spotlessApply",
     "--quiet",
