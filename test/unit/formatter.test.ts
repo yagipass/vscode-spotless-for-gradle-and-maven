@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -97,6 +97,11 @@ function applyLikeTheEditor(original: string, eol: string, edit: FormatEdit | un
 }
 
 const dirty = { stdout: "class A {}\n", stderr: "IS DIRTY\n" };
+
+const withoutSpotless = {
+  exitCode: 1,
+  log: "[ERROR] Failed to execute goal com.diffplug.spotless:spotless-maven-plugin:3.10.4:apply (default-cli) on project plain: Execution default-cli of goal com.diffplug.spotless:spotless-maven-plugin:3.10.4:apply failed: Spotless plugin absent from the project: MavenProject: example:plain:1 @ pom.xml -> [Help 1]",
+};
 
 describe("SpotlessFormatter", () => {
   it("returns an edit that turns the buffer into the Spotless output", async () => {
@@ -209,6 +214,81 @@ describe("SpotlessFormatter", () => {
     await formatter.stop();
     await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
     expect(builds).toBe(0);
+  });
+});
+
+describe("SpotlessFormatter in a build without Spotless", () => {
+  it("runs a build only for the first save and logs that once instead of an error, so a user-wide setting does not slow down every save in projects without Spotless", async () => {
+    let builds = 0;
+    const { format, lines } = setUp(
+      mavenBuild(withoutSpotless, () => {
+        builds++;
+      }),
+    );
+    await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
+    await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
+    expect(builds).toBe(1);
+    expect(lines.filter((line) => line.startsWith("info: "))).toHaveLength(1);
+    expect(lines.filter((line) => line.startsWith("error: "))).toEqual([]);
+  });
+
+  it("runs one build for saves that queued up behind the first, as Save All does", async () => {
+    let builds = 0;
+    const { format } = setUp(
+      mavenBuild(withoutSpotless, () => {
+        builds++;
+      }),
+    );
+    await Promise.all([format(new FakeDocument("x\n")), format(new FakeDocument("y\n"))]);
+    expect(builds).toBe(1);
+  });
+
+  it("formats again once a build file changes, so adding Spotless takes effect without reloading the window", async () => {
+    let spotless: Spotless = withoutSpotless;
+    const { formatter, format } = setUp({
+      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
+      maven: (request) => mavenBuild(spotless).maven(request),
+    });
+    await format(new FakeDocument("class  A {}\n"));
+    spotless = dirty;
+    await expect(format(new FakeDocument("class  A {}\n"))).resolves.toBeUndefined();
+    formatter.buildFileChanged();
+    await expect(format(new FakeDocument("class  A {}\n"))).resolves.toEqual({
+      replacement: { start: 6, end: 7, text: "" },
+      lineEnding: undefined,
+    });
+  });
+
+  it("keeps formatting the other modules of the build, because a parent can keep Spotless from one module with <inherited>false</inherited>", async () => {
+    mkdirSync(path.join(workspace, "app"));
+    writeFileSync(path.join(workspace, "app", "pom.xml"), "");
+    const modules: string[] = [];
+    const { format } = setUp({
+      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
+      maven: (request) => {
+        modules.push(request.build.module);
+        return mavenBuild(request.build.module === workspace ? dirty : withoutSpotless).maven(
+          request,
+        );
+      },
+    });
+    const inApp = path.join(workspace, "app", "A.java");
+    await format(new FakeDocument("class  A {}\n", 1, inApp));
+    await format(new FakeDocument("class  A {}\n", 1, inApp));
+    await expect(format(new FakeDocument("class  A {}\n"))).resolves.toBeDefined();
+    expect(modules).toEqual([path.join(workspace, "app"), workspace]);
+  });
+
+  it("keeps running a build on every save after an ordinary failure, so fixing a syntax error formats the next save", async () => {
+    let builds = 0;
+    const { format } = setUp(
+      mavenBuild({ exitCode: 1, log: "[ERROR] Step 'google-java-format' found problem" }, () => {
+        builds++;
+      }),
+    );
+    await format(new FakeDocument("x\n"));
+    await format(new FakeDocument("x\n"));
+    expect(builds).toBe(2);
   });
 });
 

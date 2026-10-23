@@ -29,6 +29,8 @@ suite(`Maven single module (${expectedExecutable})`, () => {
   commonSuite({
     sourceDir: () => sourceDir("single"),
     buildFile: () => workspacePath("single", "pom.xml"),
+    withoutSpotless:
+      '<project xmlns="http://maven.apache.org/POM/4.0.0">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>com.example</groupId>\n  <artifactId>single</artifactId>\n  <version>1.0</version>\n</project>\n',
     uncoveredSuffix: "<!--   not a Spotless target   -->\n",
   });
 

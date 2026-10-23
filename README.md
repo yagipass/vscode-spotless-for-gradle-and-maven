@@ -68,7 +68,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - With `ratchetFrom`, the first save after a change is not formatted. With mvnd, later saves may not be formatted either. Set `spotlessForGradleAndMaven.maven.executable` to `mvn` in that case.
 - A file that more than one Spotless format targets is not formatted, and a warning is logged.
 - Steps that use npm, such as prettier, take several seconds.
-- In a build without Spotless, every save runs a build that fails, so enable the code action only in workspaces that use Spotless.
+- In a build or Maven module without Spotless, only the first save runs a build. Saves there run one again after a `pom.xml`, `*.gradle` or `*.gradle.kts` file in the workspace changes, or after **Developer: Reload Window**.
 - Formatting does not run when `files.autoSave` is `afterDelay`, because VS Code runs no code actions on auto save.
 - In Maven builds, includes in a parent POM that reach into child module directories, such as `**/*.md` at the root, are not supported.
 - In Maven builds, files in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample project, are not formatted.

@@ -119,11 +119,20 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   };
 
+  const buildFiles = vscode.workspace.createFileSystemWatcher("**/{pom.xml,*.gradle,*.gradle.kts}");
+  const buildFileChanged = () => {
+    formatter.buildFileChanged();
+  };
+
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider({ scheme: "file" }, codeActionProvider, {
       providedCodeActionKinds: [codeActionKind],
     }),
     vscode.commands.registerCommand("spotlessForGradleAndMaven.formatDocument", formatDocument),
+    buildFiles,
+    buildFiles.onDidCreate(buildFileChanged),
+    buildFiles.onDidChange(buildFileChanged),
+    buildFiles.onDidDelete(buildFileChanged),
   );
 }
 
