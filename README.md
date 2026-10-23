@@ -75,7 +75,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - In a build or Maven module without Spotless, only the first save runs a build. Saves there run one again after a `pom.xml`, `*.gradle` or `*.gradle.kts` file in the workspace changes, or after **Developer: Reload Window**.
 - Formatting does not run when `files.autoSave` is `afterDelay`, because VS Code runs no code actions on auto save.
 - In Gradle builds, a file whose path contains a comma is not formatted, and an error is logged, because the Spotless Gradle plugin reads the comma as a separator between files.
-- In Maven builds, includes in a parent POM that reach into child module directories, such as `**/*.md` at the root, are not supported.
+- In Maven builds, a file in a module is formatted only with the module's Spotless configuration, including what it inherits, and its includes are relative to the module's directory. Includes in a parent POM that name a path inside a module, such as `app/docs/*.md` at the root, are not supported.
 - In Maven builds, saving a file in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample or a module listed only in an inactive profile, runs Maven twice, the second time in that project's directory.
 - If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
 - On Windows, Maven builds fail when a path contains characters outside the system code page, such as Japanese on an English Windows. This includes the paths of the user profile and the temp folder.
