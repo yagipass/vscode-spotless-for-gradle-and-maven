@@ -381,6 +381,62 @@ export function commonSuite(options: {
     assert.equal(await readDisk(uri), broken);
     await expectLog(/Spotless failed for .*TmpBroken\.java/);
   });
+
+  test("formats after organize imports when the code actions on save are an array that ends with Spotless, as the README says, so the saved file passes spotlessCheck", async () => {
+    const settings = workspacePath(".vscode", "settings.json");
+    const original = await readFile(settings, "utf8");
+    const usesArray = () =>
+      Array.isArray(vscode.workspace.getConfiguration("editor").get("codeActionsOnSave"));
+    const organizeImports = vscode.languages.registerCodeActionsProvider(
+      { pattern: new vscode.RelativePattern(options.sourceDir(), "TmpImports.java") },
+      {
+        provideCodeActions(document) {
+          const action = new vscode.CodeAction(
+            "Organize Imports",
+            vscode.CodeActionKind.SourceOrganizeImports,
+          );
+          action.edit = new vscode.WorkspaceEdit();
+          action.edit.insert(
+            document.uri,
+            new vscode.Position(1, 0),
+            "\nimport java.util.List;\n\nimport org.w3c.dom.Node;\n",
+          );
+          return [action];
+        },
+      },
+      { providedCodeActionKinds: [vscode.CodeActionKind.SourceOrganizeImports] },
+    );
+    try {
+      await writeFile(
+        settings,
+        JSON.stringify({
+          ...(JSON.parse(original) as Record<string, unknown>),
+          "editor.codeActionsOnSave": [
+            "source.organizeImports",
+            "source.fixAll.spotlessForGradleAndMaven",
+          ],
+        }),
+      );
+      await waitUntil(usesArray, "VS Code did not load the changed settings.json");
+      const uri = await createFile(
+        path.join(options.sourceDir(), "TmpImports.java"),
+        placeholder("TmpImports"),
+      );
+      const document = await openWithUnsavedText(
+        uri,
+        "package com.example;\npublic class TmpImports {\nList<Node>  nodes;\n}\n",
+      );
+      await save(document);
+      assert.equal(
+        await readDisk(uri),
+        "package com.example;\n\nimport java.util.List;\nimport org.w3c.dom.Node;\n\npublic class TmpImports {\n  List<Node> nodes;\n}\n",
+      );
+    } finally {
+      await writeFile(settings, original);
+      await waitUntil(() => !usesArray(), "VS Code did not load the restored settings.json");
+      organizeImports.dispose();
+    }
+  });
 }
 
 export function shiftJisTest(sourceDir: () => string): void {
