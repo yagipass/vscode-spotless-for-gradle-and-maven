@@ -1,55 +1,80 @@
-def properties = gradle.startParameter.projectProperties
-def stdinPath = properties['spotlessForGradleAndMaven.stdin']
-def stdoutPath = properties['spotlessForGradleAndMaven.stdout']
-def stderrPath = properties['spotlessForGradleAndMaven.stderr']
-def hookPath = properties['spotlessIdeHook']
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 
-def unclosable(OutputStream stream) {
-    new PrintStream(stream, true) {
-        void close() {
-            flush()
+abstract class SpotlessForGradleAndMavenRedirect implements BuildService<BuildServiceParameters.None>, AutoCloseable {
+    private Map redirected
+
+    private static PrintStream unclosable(OutputStream stream) {
+        new PrintStream(stream, true) {
+            void close() {
+                flush()
+            }
         }
     }
-}
 
-if (stdinPath != null && stdoutPath != null && stderrPath != null && hookPath != null) {
-    def redirected = null
-    gradle.taskGraph.beforeTask { task ->
-        if (redirected == null && task.class.name.startsWith('com.diffplug.gradle.spotless.SpotlessTaskImpl')) {
-            def input = new FileInputStream(stdinPath)
-            def output = new FileOutputStream(stdoutPath, true)
-            def error = new FileOutputStream(stderrPath, true)
-            redirected = [
-                task: task,
-                systemIn: System.in,
-                systemOut: System.out,
-                systemErr: System.err,
-                files: [input, output, error],
-                out: unclosable(output),
-                err: unclosable(error),
-            ]
-            System.setIn(input)
-            System.setOut(redirected.out)
-            System.setErr(redirected.err)
-        }
+    synchronized void redirect(String stdinPath, String stdoutPath, String stderrPath) {
+        restore()
+        def input = new FileInputStream(stdinPath)
+        def output = new FileOutputStream(stdoutPath, true)
+        def error = new FileOutputStream(stderrPath, true)
+        redirected = [
+            stderrPath: stderrPath,
+            systemIn: System.in,
+            systemOut: System.out,
+            systemErr: System.err,
+            files: [input, output, error],
+            out: unclosable(output),
+            err: unclosable(error),
+        ]
+        System.setIn(input)
+        System.setOut(redirected.out)
+        System.setErr(redirected.err)
     }
-    gradle.taskGraph.afterTask { task ->
-        if (redirected != null && redirected.task.is(task)) {
+
+    synchronized void restore() {
+        if (redirected != null) {
             System.setIn(redirected.systemIn)
             System.setOut(redirected.systemOut)
             System.setErr(redirected.systemErr)
             def failed = redirected.out.checkError() | redirected.err.checkError()
             redirected.files*.close()
             if (failed) {
-                new FileOutputStream(stderrPath).close()
+                new FileOutputStream(redirected.stderrPath).close()
             }
             redirected = null
         }
     }
+
+    void close() {
+        restore()
+    }
+}
+
+def properties = gradle.startParameter.projectProperties
+def stdinPath = properties['spotlessForGradleAndMaven.stdin']
+def stdoutPath = properties['spotlessForGradleAndMaven.stdout']
+def stderrPath = properties['spotlessForGradleAndMaven.stderr']
+def hookPath = properties['spotlessIdeHook']
+
+if (stdinPath != null && stdoutPath != null && stderrPath != null && hookPath != null) {
+    def service = gradle.sharedServices.registerIfAbsent('spotlessForGradleAndMavenRedirect', SpotlessForGradleAndMavenRedirect) {
+        maxParallelUsages.set(1)
+    }
     gradle.taskGraph.whenReady { graph ->
+        def spotlessTasks = graph.allTasks.findAll { it.class.name.startsWith('com.diffplug.gradle.spotless.SpotlessTaskImpl') }
         def file = new File(hookPath)
         if (!file.isFile() || !Arrays.equals(file.bytes, new File(stdinPath).bytes)) {
-            graph.allTasks.findAll { it.class.name.startsWith('com.diffplug.gradle.spotless.SpotlessTaskImpl') }*.setupRatchet('')
+            spotlessTasks*.setupRatchet('')
+        }
+        spotlessTasks.each { task ->
+            task.usesService(service)
+            task.onlyIf {
+                service.get().redirect(stdinPath, stdoutPath, stderrPath)
+                true
+            }
+            task.doLast {
+                service.get().restore()
+            }
         }
     }
 }

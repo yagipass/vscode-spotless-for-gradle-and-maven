@@ -34,7 +34,6 @@ export async function gradleArgs(
   return [
     "spotlessApply",
     "--quiet",
-    "--no-configuration-cache",
     "--no-parallel",
     "--init-script",
     initScript,
