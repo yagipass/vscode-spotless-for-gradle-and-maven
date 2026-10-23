@@ -90,8 +90,9 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   const codeActionProvider: vscode.CodeActionProvider<SpotlessCodeAction> = {
-    provideCodeActions(document, _range, codeActionContext) {
-      return codeActionContext.only?.contains(codeActionKind)
+    provideCodeActions(document, _range, { only, triggerKind }) {
+      return only?.contains(codeActionKind) &&
+        (triggerKind === vscode.CodeActionTriggerKind.Invoke || enabledOnSave(document))
         ? [new SpotlessCodeAction(document)]
         : [];
     },
@@ -129,6 +130,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export async function deactivate(): Promise<void> {
   await stopFormatting?.();
+}
+
+function enabledOnSave(document: vscode.TextDocument): boolean {
+  const setting = vscode.workspace
+    .getConfiguration("editor", document)
+    .get<Record<string, unknown> | string[]>("codeActionsOnSave");
+  const value = Array.isArray(setting)
+    ? setting.includes(codeActionKind.value)
+    : setting?.[codeActionKind.value];
+  return Boolean(value) && value !== "never";
 }
 
 function toAbortSignal(token: vscode.CancellationToken): AbortSignal {
