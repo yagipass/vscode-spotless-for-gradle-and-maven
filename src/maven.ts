@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync, statSync } from "node:fs";
-import { realpath } from "node:fs/promises";
 import * as path from "node:path";
 import type { MavenBuild } from "./build";
 import { type BuildRequest, type BuildResult, type HookFiles, hookProperties } from "./hook";
@@ -38,7 +37,11 @@ export function mavenArgs(
   hookFiles: HookFiles,
 ): string[] {
   const module = path.relative(build.root, build.module);
-  const properties = [`maven.ext.class.path=${extensionJar}`, ...hookProperties(file, hookFiles)];
+  const properties = [
+    `maven.ext.class.path=${extensionJar}`,
+    `spotlessForGradleAndMaven.module=${build.module}`,
+    ...hookProperties(file, hookFiles),
+  ];
   return [
     "-q",
     "-B",
@@ -68,9 +71,7 @@ export async function runMaven(
       "No Maven executable found: install mvnd or mvn, add mvnw to the build root, or set spotlessForGradleAndMaven.maven.executable",
     );
   }
-  const root = windows ? build.root : await realpath(build.root);
-  const file = path.join(root, path.relative(build.root, request.file));
-  const args = mavenArgs(build, file, options.extensionJar, request.hookFiles);
+  const args = mavenArgs(build, request.file, options.extensionJar, request.hookFiles);
   const result = await runProcess(executable, args, build.root, request.signal);
   return {
     exitCode: result.exitCode,

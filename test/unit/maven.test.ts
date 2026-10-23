@@ -1,12 +1,4 @@
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  realpathSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -49,6 +41,8 @@ describe("mavenArgs", () => {
       "core/api",
       "--define",
       "maven.ext.class.path=/ext/spotless-for-gradle-and-maven-extension.jar",
+      "--define",
+      "spotlessForGradleAndMaven.module=/repo/core/api",
       "--define",
       "spotlessForGradleAndMaven.stdin=/tmp/in",
       "--define",
@@ -94,6 +88,17 @@ describe("mavenArgs", () => {
       files,
     );
     expect(args.filter((arg) => arg.startsWith("-D"))).toEqual([]);
+  });
+
+  it("passes the file and its module as VS Code names them, so the bundled extension can name the file under the directory Maven builds the module in, which a symbolic link above the build root makes differ by OS and by mvn or mvnd", () => {
+    const args = mavenArgs(
+      { tool: "maven", root: "/link", module: "/link/core" },
+      "/link/core/src/A.java",
+      "/ext.jar",
+      files,
+    );
+    expect(args).toContain("spotlessForGradleAndMaven.module=/link/core");
+    expect(args).toContain("spotlessIdeHook=/link/core/src/A.java");
   });
 });
 
@@ -174,39 +179,5 @@ describe("runMaven", () => {
         },
       ),
     ).rejects.toThrow("missing.jar does not exist");
-  });
-
-  async function hookSource(root: string, file: string): Promise<string | undefined> {
-    const extensionJar = path.join(base, "ext.jar");
-    writeFileSync(extensionJar, "");
-    const result = await runMaven(
-      {
-        build: { tool: "maven", root, module: root },
-        file,
-        hookFiles: files,
-        signal: new AbortController().signal,
-      },
-      { extensionJar, configuredExecutable: executable("bin/mvn") },
-    );
-    return / spotlessIdeHook=(\S+) /.exec(result.log)?.[1];
-  }
-
-  it("resolves symbolic links in the build root's path, because Maven lists the sources under its working directory as the OS reports it and a workspace opened through a link would never match", async () => {
-    mkdirSync(path.join(base, "real", "src"), { recursive: true });
-    writeFileSync(path.join(base, "real", "src", "A.java"), "");
-    symlinkSync(path.join(base, "real"), path.join(base, "link"));
-    expect(
-      await hookSource(path.join(base, "link"), path.join(base, "link", "src", "A.java")),
-    ).toBe(path.join(realpathSync(path.join(base, "real")), "src", "A.java"));
-  });
-
-  it("keeps a symbolic link below the build root, because Maven lists the sources through it and the link's target would never match", async () => {
-    mkdirSync(path.join(base, "shared"));
-    writeFileSync(path.join(base, "shared", "A.java"), "");
-    mkdirSync(path.join(base, "root"));
-    symlinkSync(path.join(base, "shared"), path.join(base, "root", "src"));
-    expect(
-      await hookSource(path.join(base, "root"), path.join(base, "root", "src", "A.java")),
-    ).toBe(path.join(realpathSync(path.join(base, "root")), "src", "A.java"));
   });
 });
