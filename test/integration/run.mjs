@@ -203,6 +203,25 @@ for (const dir of projects(prepared, "maven", "pom.xml")) {
   mustRun("mvn", ["-q", "-B", "com.diffplug.spotless:spotless-maven-plugin:check"], dir);
 }
 mustRun(wrapper("mvnw"), ["-q", "-B", "validate"], path.join(prepared, "maven", "single"));
+const ratchet = path.join(prepared, "gradle", "ratchet");
+mustRun("git", ["init", "-q"], ratchet);
+mustRun("git", ["add", "."], ratchet);
+mustRun(
+  "git",
+  [
+    "-c",
+    "user.name=test",
+    "-c",
+    "user.email=test@example.com",
+    "-c",
+    "commit.gpgsign=false",
+    "commit",
+    "-q",
+    "-m",
+    "ratchetFrom baseline",
+  ],
+  ratchet,
+);
 for (const dir of projects(prepared, "gradle", "settings.gradle")) {
   mustRun(wrapper("gradlew"), ["-q", "spotlessCheck"], dir);
 }
