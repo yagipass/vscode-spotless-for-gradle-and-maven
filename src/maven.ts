@@ -11,6 +11,7 @@ export interface MavenOptions {
 
 const windows = process.platform === "win32";
 const cmdMetaCharacters = /([()\][%!^"`<>&|;, *?])/g;
+const notInReactor = "Could not find the selected project in the reactor";
 
 export function findMavenExecutable(
   root: string,
@@ -67,12 +68,20 @@ export async function runMaven(
       "No Maven executable found: install mvnd or mvn, add mvnw to the build root, or set spotlessForGradleAndMaven.maven.executable",
     );
   }
-  const args = mavenArgs(build, request.file, options.extensionJar, request.hookFiles);
-  const result = await runProcess(executable, args, build.root, request.signal);
-  return {
-    exitCode: result.exitCode,
-    log: [executable, ...args].join(" ") + "\n" + result.output,
+  const run = async (target: MavenBuild): Promise<BuildResult> => {
+    const args = mavenArgs(target, request.file, options.extensionJar, request.hookFiles);
+    const result = await runProcess(executable, args, target.root, request.signal);
+    return {
+      exitCode: result.exitCode,
+      log: [executable, ...args].join(" ") + "\n" + result.output,
+    };
   };
+  const reactor = await run(build);
+  if (reactor.exitCode === 0 || !reactor.log.includes(notInReactor)) {
+    return reactor;
+  }
+  const standalone = await run({ ...build, root: build.module });
+  return { exitCode: standalone.exitCode, log: reactor.log + standalone.log };
 }
 
 export function windowsCommandLine(executable: string, args: readonly string[]): string {

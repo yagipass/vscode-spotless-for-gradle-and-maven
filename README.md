@@ -71,7 +71,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - In a build without Spotless, every save runs a build that fails, so enable the code action only in workspaces that use Spotless.
 - Formatting does not run when `files.autoSave` is `afterDelay`, because VS Code runs no code actions on auto save.
 - In Maven builds, includes in a parent POM that reach into child module directories, such as `**/*.md` at the root, are not supported.
-- In Maven builds, files in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample project, are not formatted.
+- In Maven builds, saving a file in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample or a module listed only in an inactive profile, runs Maven twice, the second time in that project's directory.
 - If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
 - On Windows, Maven builds fail when a path contains characters outside the system code page, such as Japanese on an English Windows. This includes the paths of the user profile and the temp folder.
 - On Windows, mvnd runs its slower JVM client when a path contains non-ASCII characters, because its native client garbles them.

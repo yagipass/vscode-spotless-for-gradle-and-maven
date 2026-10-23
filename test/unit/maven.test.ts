@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -14,10 +14,10 @@ afterEach(() => {
   rmSync(base, { recursive: true, force: true });
 });
 
-function executable(relative: string): string {
+function executable(relative: string, script = ""): string {
   const file = path.join(base, relative);
   mkdirSync(path.dirname(file), { recursive: true });
-  writeFileSync(file, "#!/bin/sh\n");
+  writeFileSync(file, `#!/bin/sh\n${script}`);
   chmodSync(file, 0o755);
   return file;
 }
@@ -166,5 +166,37 @@ describe("runMaven", () => {
         },
       ),
     ).rejects.toThrow("missing.jar does not exist");
+  });
+
+  function runFakeMaven(script: string) {
+    const jar = path.join(base, "ext.jar");
+    writeFileSync(jar, "");
+    return runMaven(
+      {
+        build: { tool: "maven", root: base, module: path.join(base, "it") },
+        file: path.join(base, "it", "A.java"),
+        hookFiles: files,
+        signal: new AbortController().signal,
+      },
+      { extensionJar: jar, configuredExecutable: executable("bin/mvn", script) },
+    );
+  }
+
+  it("builds the module on its own in its directory when the topmost pom does not include it, so a module listed only in a profile or a standalone project is still formatted", async () => {
+    mkdirSync(path.join(base, "it"));
+    const result = await runFakeMaven(
+      'case " $* " in\n' +
+        '  *" -pl it "*) echo "[ERROR] Could not find the selected project in the reactor: it @ "; exit 1 ;;\n' +
+        '  *" -N "*) echo "built $(pwd -P) alone" ;;\n' +
+        "esac\n",
+    );
+    expect(result.exitCode).toBe(0);
+    expect(result.log).toContain(`built ${realpathSync(path.join(base, "it"))} alone`);
+  });
+
+  it("runs only one build when the module fails for another reason, so a buffer with a syntax error does not cost a second build", async () => {
+    const result = await runFakeMaven('echo "build ran"\nexit 1\n');
+    expect(result.exitCode).toBe(1);
+    expect(result.log.match(/^build ran$/gm)).toHaveLength(1);
   });
 });
