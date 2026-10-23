@@ -198,9 +198,33 @@ export async function expectFormattedOnSave(
   assert.equal(await readDisk(uri), decorate(googleFormatted(className)));
 }
 
+async function writeSeenByWatchers(file: string, content: string): Promise<void> {
+  const watcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(path.dirname(file), path.basename(file)),
+  );
+  try {
+    const seen = new Promise<boolean>((resolve) => {
+      watcher.onDidCreate(() => {
+        resolve(true);
+      });
+      watcher.onDidChange(() => {
+        resolve(true);
+      });
+    });
+    await writeFile(file, content);
+    assert.ok(
+      await Promise.race([seen, setTimeout(10000, false)]),
+      `VS Code did not report the change to ${file}`,
+    );
+  } finally {
+    watcher.dispose();
+  }
+}
+
 export function commonSuite(options: {
   readonly sourceDir: () => string;
   readonly buildFile: () => string;
+  readonly withoutSpotless: string;
   readonly uncoveredSuffix: string;
 }): void {
   test("formats the unsaved buffer on save", () =>
@@ -227,6 +251,32 @@ export function commonSuite(options: {
     await save(document);
     assert.equal(document.getText(), googleFormatted("TmpClean"));
     await expectLog(/TmpClean\.java: clean/);
+  });
+
+  test("runs no build on later saves in a build without Spotless, and formats again once a build file adds Spotless, so a user-wide setting does not slow down other projects", async () => {
+    const buildFile = await restoreAfterTest(options.buildFile());
+    const withSpotless = await readDisk(buildFile);
+    const project = escapeRegExp(path.dirname(buildFile.fsPath));
+    await writeSeenByWatchers(buildFile.fsPath, options.withoutSpotless);
+    const first = await createFile(
+      path.join(options.sourceDir(), "TmpNoSpotless.java"),
+      placeholder("TmpNoSpotless"),
+    );
+    await save(await openWithUnsavedText(first, unformatted("TmpNoSpotless")));
+    await expectLog(new RegExp(`Found no Spotless in ${project}, `));
+    const later = await createFile(
+      path.join(options.sourceDir(), "TmpNoSpotlessLater.java"),
+      placeholder("TmpNoSpotlessLater"),
+    );
+    const document = await openWithUnsavedText(later, unformatted("TmpNoSpotlessLater"));
+    await save(document);
+    assert.equal(document.getText(), unformatted("TmpNoSpotlessLater"));
+    await expectLog(
+      new RegExp(`Ran no build for .*TmpNoSpotlessLater\\.java because ${project} has no Spotless`),
+    );
+    assert.doesNotMatch(spotlessLog(), /Spotless failed for .*TmpNoSpotless/);
+    await writeSeenByWatchers(buildFile.fsPath, withSpotless);
+    await expectFormattedOnSave(options.sourceDir(), "TmpSpotlessAdded");
   });
 
   test("leaves a file that no Spotless format covers unchanged", async () => {

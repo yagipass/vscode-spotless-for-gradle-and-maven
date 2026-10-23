@@ -96,6 +96,32 @@ describe("interpretHookOutput", () => {
     });
   });
 
+  it.each([
+    [
+      "Gradle 8.1",
+      "FAILURE: Build failed with an exception.\n\n* What went wrong:\nTask 'spotlessApply' not found in root project 'plain'.\n",
+    ],
+    [
+      "Gradle 9",
+      "FAILURE: Build failed with an exception.\n\n* What went wrong:\nSelection failed\n  Task 'spotlessApply' not found in root project 'plain'.\n",
+    ],
+    [
+      "Maven",
+      "[ERROR] Failed to execute goal com.diffplug.spotless:spotless-maven-plugin:3.10.4:apply (default-cli) on project plain: Execution default-cli of goal com.diffplug.spotless:spotless-maven-plugin:3.10.4:apply failed: Spotless plugin absent from the project: MavenProject: example:plain:1 @ /work/plain/pom.xml -> [Help 1]\n",
+    ],
+  ])(
+    "tells a %s build without Spotless from a failure, so it is not logged as an error on every save",
+    (_tool, log) => {
+      expect(interpretHookOutput(output({ exitCode: 1, log }))).toEqual({ kind: "noSpotless" });
+    },
+  );
+
+  it("still reports a failing Spotless step as a failure, so a build that has Spotless keeps running on save", () => {
+    const log =
+      "FAILURE: Build failed with an exception.\n\n* What went wrong:\nExecution failed for task ':spotlessJava'.\n> Step 'google-java-format' found problem in 'src/main/java/A.java':\n";
+    expect(interpretHookOutput(output({ exitCode: 1, log }))).toEqual({ kind: "failed" });
+  });
+
   it("finds the status line among JVM warnings and Windows line endings", () => {
     const stderr = [
       "WARNING: A restricted method in java.lang.foreign.MemorySegment has been called",

@@ -43,6 +43,7 @@ export interface Logger {
 export class SpotlessFormatter {
   private readonly queue = new SerialQueue();
   private readonly stopping = new AbortController();
+  private readonly withoutSpotless = new Set<string>();
 
   constructor(
     private readonly backends: Backends,
@@ -93,6 +94,10 @@ export class SpotlessFormatter {
     await this.queue.idle();
   }
 
+  buildFileChanged(): void {
+    this.withoutSpotless.clear();
+  }
+
   private async run(
     build: Build,
     file: string,
@@ -100,8 +105,13 @@ export class SpotlessFormatter {
     encoding: string,
     signal: AbortSignal,
   ): Promise<HookOutput | undefined> {
+    const project = build.tool === "maven" ? build.module : build.root;
     try {
       const output = await this.queue.run(build.root, signal, async () => {
+        if (this.withoutSpotless.has(project)) {
+          this.log.debug(`Ran no build for ${file} because ${project} has no Spotless`);
+          return undefined;
+        }
         const started = Date.now();
         const output = await runWithHookFiles(text, encoding, this.codec, (hookFiles) =>
           build.tool === "gradle"
@@ -111,6 +121,12 @@ export class SpotlessFormatter {
         this.log.debug(
           `Spotless (${build.tool}) ran in ${String(Date.now() - started)} ms for ${file}`,
         );
+        if (interpretHookOutput(output).kind === "noSpotless") {
+          this.withoutSpotless.add(project);
+          this.log.info(
+            `Found no Spotless in ${project}, so saves there run no build until a build file changes`,
+          );
+        }
         return output;
       });
       signal.throwIfAborted();

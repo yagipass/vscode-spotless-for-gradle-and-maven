@@ -77,13 +77,16 @@ export type HookResult =
   | { readonly kind: "didNotConverge" }
   | { readonly kind: "notCovered" }
   | { readonly kind: "multipleFormats" }
+  | { readonly kind: "noSpotless" }
   | { readonly kind: "failed" };
 
 const statusLines = new Set(["IS DIRTY", "IS CLEAN", "DID NOT CONVERGE"]);
+const noSpotless =
+  /Task 'spotlessApply' not found in root project|Spotless plugin absent from the project/;
 
 export function interpretHookOutput(output: HookOutput): HookResult {
   if (output.exitCode !== 0) {
-    return { kind: "failed" };
+    return noSpotless.test(output.log) ? { kind: "noSpotless" } : { kind: "failed" };
   }
   const statuses = output.stderr
     .split("\n")

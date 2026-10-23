@@ -10,6 +10,7 @@ suite("Gradle single project", () => {
   commonSuite({
     sourceDir: () => sourceDir("single"),
     buildFile: () => workspacePath("single", "build.gradle"),
+    withoutSpotless: "plugins {\n    id 'java'\n}\n",
     uncoveredSuffix: "\n//   not a Spotless target   \n",
   });
 });
