@@ -319,6 +319,30 @@ export function commonSuite(options: {
     assert.equal(document.getText(), unformatted("TmpMenu"));
   });
 
+  test("runs no build when a generic source.fixAll set for other tools saves a file in a language Spotless is not enabled for, but still formats Java where it is", async () => {
+    const editor = vscode.workspace.getConfiguration("editor");
+    const java = vscode.workspace.getConfiguration("editor", { languageId: "java" });
+    const original = editor.inspect("codeActionsOnSave")?.workspaceValue;
+    const target = vscode.ConfigurationTarget.Workspace;
+    await editor.update("codeActionsOnSave", { "source.fixAll": "explicit" }, target);
+    await java.update(
+      "codeActionsOnSave",
+      { "source.fixAll.spotlessForGradleAndMaven": "explicit" },
+      target,
+      true,
+    );
+    try {
+      const notes = await createFile(path.join(options.sourceDir(), "TmpNotes.md"), "");
+      await save(await openWithUnsavedText(notes, "# Notes\n"));
+      await expectFormattedOnSave(options.sourceDir(), "TmpGeneric");
+      await expectLog(/TmpGeneric\.java: dirty/);
+      assert.doesNotMatch(spotlessLog(), /TmpNotes\.md/);
+    } finally {
+      await java.update("codeActionsOnSave", undefined, target, true);
+      await editor.update("codeActionsOnSave", original, target);
+    }
+  });
+
   test("converts the line endings to the ones Spotless writes, so the saved file passes spotlessCheck", async () => {
     const crlf = (text: string) => text.replace(/\n/g, "\r\n");
     const uri = await createFile(
