@@ -29,6 +29,7 @@ export async function gradleArgs(
     "spotlessApply",
     "--quiet",
     "--no-configuration-cache",
+    "--no-parallel",
     "--init-script",
     initScript,
     ...properties.map((property) => `-P${property}`),

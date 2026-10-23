@@ -19,6 +19,9 @@ suite("Gradle multi-project build", () => {
     expectFormattedOnSave(sourceDir("multi", "app"), "TmpApp", (text) =>
       text.replace("\npublic", "\n// 日本語のコメント\npublic"),
     ));
+
+  test("formats a subproject file even though the build runs another subproject's Spotless task in parallel", () =>
+    expectFormattedOnSave(sourceDir("multi", "app"), "TmpParallel"));
 });
 
 suite("Gradle Shift_JIS sources", () => {
