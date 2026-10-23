@@ -70,6 +70,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - Steps that use npm, such as prettier, take several seconds.
 - In a build without Spotless, every save runs a build that fails, so enable the code action only in workspaces that use Spotless.
 - Formatting does not run when `files.autoSave` is `afterDelay`, because VS Code runs no code actions on auto save.
+- In Gradle builds, a file whose path contains a comma is not formatted, and an error is logged, because the Spotless Gradle plugin reads the comma as a separator between files.
 - In Maven builds, includes in a parent POM that reach into child module directories, such as `**/*.md` at the root, are not supported.
 - In Maven builds, files in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample project, are not formatted.
 - If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
