@@ -42,6 +42,8 @@ describe("mavenArgs", () => {
       "--define",
       "maven.ext.class.path=/ext/spotless-for-gradle-and-maven-extension.jar",
       "--define",
+      "mvnd.noModelCache=true",
+      "--define",
       "spotlessForGradleAndMaven.module=/repo/core/api",
       "--define",
       "spotlessForGradleAndMaven.stdin=/tmp/in",
@@ -99,6 +101,16 @@ describe("mavenArgs", () => {
     );
     expect(args).toContain("spotlessForGradleAndMaven.module=/link/core");
     expect(args).toContain("spotlessIdeHook=/link/core/src/A.java");
+  });
+
+  it("turns off the mvnd daemon's cache of POMs with a release version, so an edited parent POM applies on the next save instead of after mvnd --stop", () => {
+    const args = mavenArgs(
+      { tool: "maven", root: "/repo", module: "/repo/app" },
+      "/repo/app/src/A.java",
+      "/ext.jar",
+      files,
+    );
+    expect(args.join(" ")).toContain("--define mvnd.noModelCache=true");
   });
 });
 

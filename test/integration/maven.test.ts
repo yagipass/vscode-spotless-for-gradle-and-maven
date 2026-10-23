@@ -1,6 +1,6 @@
 import * as assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { readFile, rm, symlink } from "node:fs/promises";
+import { readFile, rm, symlink, writeFile } from "node:fs/promises";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import {
@@ -13,6 +13,8 @@ import {
   expectNoProcess,
   openWithUnsavedText,
   placeholder,
+  readDisk,
+  restoreAfterTest,
   save,
   shiftJisTest,
   sourceDir,
@@ -52,6 +54,25 @@ suite(`Maven multi-module build (${expectedExecutable})`, () => {
   test("formats a module file with the plugin configured in the parent's pluginManagement, building only that module", async () => {
     await expectFormattedOnSave(sourceDir("multi", "app"), "TmpModule");
     await expectLog(/TmpModule\.java: dirty\n.* -pl app /);
+  });
+
+  test("applies an edit to a parent POM with a release version on the next save, even though the mvnd daemon has already built the module with the old one", async () => {
+    await expectFormattedOnSave(sourceDir("multi", "app"), "TmpBeforeEdit");
+    const pom = await restoreAfterTest(workspacePath("multi", "pom.xml"));
+    const original = await readDisk(pom);
+    const aosp = original.replace("</googleJavaFormat>", "<style>AOSP</style></googleJavaFormat>");
+    assert.notEqual(aosp, original);
+    await writeFile(pom.fsPath, aosp);
+    const uri = await createFile(
+      path.join(sourceDir("multi", "app"), "TmpAfterEdit.java"),
+      placeholder("TmpAfterEdit"),
+    );
+    const document = await openWithUnsavedText(uri, unformatted("TmpAfterEdit"));
+    await save(document);
+    assert.equal(
+      document.getText(),
+      "package com.example;\n\npublic class TmpAfterEdit {\n    int x = 1;\n}\n",
+    );
   });
 });
 
