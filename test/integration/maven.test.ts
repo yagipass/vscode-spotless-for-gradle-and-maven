@@ -44,13 +44,13 @@ suite(`Maven single module (${expectedExecutable})`, () => {
 });
 
 suite(`Maven multi-module build (${expectedExecutable})`, () => {
+  test("formats a file in a module that only an inactive profile lists with the parent's configuration, as Maven run in that module's directory does", () =>
+    expectFormattedOnSave(sourceDir("multi", "it"), "TmpProfileModule"));
+
   test("formats a module file with the plugin configured in the parent's pluginManagement, building only that module", async () => {
     await expectFormattedOnSave(sourceDir("multi", "app"), "TmpModule");
     await expectLog(/TmpModule\.java: dirty\n.* -pl app /);
   });
-
-  test("formats a file in a module that only an inactive profile lists with the parent's configuration, as Maven run in that module's directory does", () =>
-    expectFormattedOnSave(sourceDir("multi", "it"), "TmpProfileModule"));
 });
 
 suite(`Maven configuration from a plugin dependency (${expectedExecutable})`, () => {
