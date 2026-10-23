@@ -13,6 +13,15 @@
     <module>app</module>
   </modules>
 
+  <profiles>
+    <profile>
+      <id>it</id>
+      <modules>
+        <module>it</module>
+      </modules>
+    </profile>
+  </profiles>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

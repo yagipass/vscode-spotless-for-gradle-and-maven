@@ -111,7 +111,7 @@ function copyFixtures(from, to) {
     rewrite(
       [path.join(dir, ".mvn", "maven.config")],
       /(?<=^-Dmaven\.repo\.local=).*$/m,
-      path.relative(dir, path.join(cache, "m2")),
+      path.join(cache, "m2"),
     );
   }
 }
