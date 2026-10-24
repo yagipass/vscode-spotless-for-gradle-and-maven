@@ -59,3 +59,8 @@ suite("Gradle build with ratchetFrom", () => {
     await expectLog(/Legacy\.java: clean/);
   });
 });
+
+suite("Gradle build with Isolated Projects", () => {
+  test("formats a subproject file even though Isolated Projects forces the configuration cache on and runs another subproject's Spotless task in parallel", () =>
+    expectFormattedOnSave(sourceDir("isolated", "app"), "TmpIsolated"));
+});

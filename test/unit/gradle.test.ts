@@ -75,6 +75,11 @@ describe("gradleArgs", () => {
     const args = await gradleArgs(path.join(base, "link", "B.java"), files, "/init.gradle");
     expect(args).toContain(`-PspotlessIdeHook=${realpathSync(path.join(base, "real", "B.java"))}`);
   });
+
+  it("leaves the configuration cache as the build sets it, because Gradle refuses to run a build with Isolated Projects enabled when the configuration cache is turned off", async () => {
+    const args = await gradleArgs(file, files, "/init.gradle");
+    expect(args.filter((arg) => arg.includes("configuration-cache"))).toEqual([]);
+  });
 });
 
 describe("runGradle", () => {
