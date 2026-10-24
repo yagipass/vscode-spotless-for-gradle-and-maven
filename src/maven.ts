@@ -40,6 +40,7 @@ export function mavenArgs(
   const module = path.relative(build.root, build.module);
   const properties = [
     `maven.ext.class.path=${extensionJar}`,
+    "mvnd.noModelCache=true",
     `spotlessForGradleAndMaven.module=${build.module}`,
     ...hookProperties(file, hookFiles),
   ];

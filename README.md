@@ -77,7 +77,6 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - In Gradle builds, a file whose path contains a comma is not formatted, and an error is logged, because the Spotless Gradle plugin reads the comma as a separator between files.
 - In Maven builds, includes in a parent POM that reach into child module directories, such as `**/*.md` at the root, are not supported.
 - In Maven builds, saving a file in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample or a module listed only in an inactive profile, runs Maven twice, the second time in that project's directory.
-- If mvnd keeps using a stale released parent POM, run `mvnd --stop`.
 - On Windows, Maven builds fail when a path contains characters outside the system code page, such as Japanese on an English Windows. This includes the paths of the user profile and the temp folder.
 - On Windows, mvnd runs its slower JVM client when a path contains non-ASCII characters, because its native client garbles them.
 
