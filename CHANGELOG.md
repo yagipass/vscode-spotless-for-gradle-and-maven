@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.0.3](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.2...v1.0.3) - 2026-10-24
+
+### Other Changes
+- build: configure CodeRabbit reviews for this repository by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/134
+
 ## [v1.0.2](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.1...v1.0.2) - 2026-10-24
 
 ### Bug Fixes
