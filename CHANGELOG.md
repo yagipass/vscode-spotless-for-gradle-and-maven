@@ -1,5 +1,32 @@
 # Changelog
 
+## [v1.0.2](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.1...v1.0.2) - 2026-10-24
+
+### Bug Fixes
+- fix: stop a cancelled format's build in the mvnd daemon by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/98
+- fix: format Maven builds opened through a symbolic link by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/119
+- fix: format on save in Gradle builds with parallel execution by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/117
+- fix: log why a Gradle file whose path contains a comma is not formatted by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/123
+- fix: format Maven modules that the topmost pom.xml does not list by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/127
+- fix: run no build on later saves in a build without Spotless by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/126
+- fix: skip Spotless on a generic source.fixAll save unless it is enabled by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/120
+- fix: format the first save after an edit in a Gradle build with ratchetFrom by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/124
+- fix: format on save in Gradle builds with Isolated Projects by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/118
+- fix: apply an edited parent POM on the next save with mvnd by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/122
+- fix: format later saves with ratchetFrom in the mvnd daemon by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/125
+- fix: format the first save after an edit in Maven with ratchetFrom by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/130
+### Documentation
+- docs: run organize imports before Spotless with an array of code actions by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/121
+- docs: correct the README note on Maven parent POM includes by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/128
+- docs: correct the README note on auto save by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/129
+### Dependencies
+- build(deps-dev): bump oxfmt from 0.72.0 to 0.73.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/100
+- build(deps): bump the actions group with 2 updates by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/103
+- build(deps-dev): bump vitest from 5.0.3 to 5.0.4 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/102
+- build(deps-dev): bump oxlint from 1.87.0 to 1.88.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/101
+### Other Changes
+- refactor: use one name per concept across the sources by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/132
+
 ## [v1.0.1](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.0...v1.0.1) - 2026-10-19
 
 ### Bug Fixes
