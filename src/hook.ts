@@ -26,12 +26,12 @@ export interface BuildResult {
   readonly log: string;
 }
 
-export function hookProperties(source: string, hookFiles: HookFiles): string[] {
+export function hookProperties(file: string, hookFiles: HookFiles): string[] {
   return [
     `spotlessForGradleAndMaven.stdin=${hookFiles.stdin}`,
     `spotlessForGradleAndMaven.stdout=${hookFiles.stdout}`,
     `spotlessForGradleAndMaven.stderr=${hookFiles.stderr}`,
-    `spotlessIdeHook=${source}`,
+    `spotlessIdeHook=${file}`,
     "spotlessIdeHookUseStdIn",
     "spotlessIdeHookUseStdOut",
   ];

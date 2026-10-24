@@ -62,16 +62,17 @@ public class RatchetResetListener implements MojoExecutionListener {
   }
 
   private static File editedHookFile(Properties properties) {
-    String hook = properties.getProperty("spotlessIdeHook");
-    String stdin = properties.getProperty("spotlessForGradleAndMaven.stdin");
-    if (hook == null || stdin == null) {
+    String hookPath = properties.getProperty(PropertyNames.IDE_HOOK);
+    String stdinPath = properties.getProperty(PropertyNames.STDIN);
+    if (hookPath == null || stdinPath == null) {
       return null;
     }
-    File file = new File(hook);
+    File file = new File(hookPath);
     try {
       if (file.isFile()
           && Arrays.equals(
-              Files.readAllBytes(file.toPath()), Files.readAllBytes(new File(stdin).toPath()))) {
+              Files.readAllBytes(file.toPath()),
+              Files.readAllBytes(new File(stdinPath).toPath()))) {
         return null;
       }
     } catch (IOException e) {

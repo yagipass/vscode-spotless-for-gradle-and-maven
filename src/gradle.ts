@@ -19,18 +19,23 @@ export interface GradleApi {
   cancelRunBuild(options: { cancellationKey: string }): Promise<void>;
 }
 
+export interface GradleOptions {
+  readonly api: GradleApi;
+  readonly initScript: string;
+}
+
 export async function gradleArgs(
   file: string,
   hookFiles: HookFiles,
   initScript: string,
 ): Promise<string[]> {
-  const source = await realpath(file);
-  if (source.includes(",")) {
+  const realFile = await realpath(file);
+  if (realFile.includes(",")) {
     throw new Error(
       "The Spotless Gradle plugin cannot format a file whose path contains a comma, because it reads the comma as a separator between files",
     );
   }
-  const properties = hookProperties(source, hookFiles);
+  const properties = hookProperties(realFile, hookFiles);
   return [
     "spotlessApply",
     "--quiet",
@@ -43,27 +48,26 @@ export async function gradleArgs(
 
 export async function runGradle(
   request: BuildRequest<GradleBuild>,
-  api: GradleApi,
-  initScript: string,
+  options: GradleOptions,
 ): Promise<BuildResult> {
-  const args = await gradleArgs(request.file, request.hookFiles, initScript);
+  const args = await gradleArgs(request.file, request.hookFiles, options.initScript);
   request.signal.throwIfAborted();
   const cancellationKey = `spotlessForGradleAndMaven-${randomUUID()}`;
-  const output: Uint8Array[] = [];
-  const build = api.runBuild({
+  const chunks: Uint8Array[] = [];
+  const running = options.api.runBuild({
     projectFolder: request.build.root,
     args,
     input: "",
-    onOutput: (chunk) => {
-      output.push(chunk.getOutputBytes_asU8());
+    onOutput: (output) => {
+      chunks.push(output.getOutputBytes_asU8());
     },
     showOutputColors: false,
     cancellationKey,
   });
-  const log = () => Buffer.concat(output).toString("utf8");
+  const log = () => Buffer.concat(chunks).toString("utf8");
   try {
-    await settleOrAbort(build, request.signal, () => {
-      void api.cancelRunBuild({ cancellationKey });
+    await settleOrAbort(running, request.signal, () => {
+      void options.api.cancelRunBuild({ cancellationKey });
     });
     return { exitCode: 0, log: log() };
   } catch (error) {

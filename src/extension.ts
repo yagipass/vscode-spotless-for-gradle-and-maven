@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { SpotlessFormatter } from "./formatter";
+import { type FormatEdit, SpotlessFormatter } from "./formatter";
 import { type GradleApi, runGradle } from "./gradle";
 import { runMaven } from "./maven";
 
@@ -15,7 +15,7 @@ class SpotlessCodeAction extends vscode.CodeAction {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const log = vscode.window.createOutputChannel("Spotless for Gradle and Maven", {
+  const logger = vscode.window.createOutputChannel("Spotless for Gradle and Maven", {
     log: true,
   });
   const extensionJar = context.asAbsolutePath("dist/spotless-for-gradle-and-maven-extension.jar");
@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext): void {
   };
   const formatter = new SpotlessFormatter(
     {
-      gradle: async (request) => runGradle(request, await loadGradleApi(), initScript),
+      gradle: async (request) => runGradle(request, { api: await loadGradleApi(), initScript }),
       maven: (request) =>
         runMaven(request, {
           extensionJar,
@@ -49,12 +49,12 @@ export function activate(context: vscode.ExtensionContext): void {
       encode: (text, encoding) => vscode.workspace.encode(text, { encoding }),
       decode: (content, encoding) => vscode.workspace.decode(content, { encoding }),
     },
-    log,
+    logger,
     (message) => vscode.window.setStatusBarMessage(message, 5000),
   );
   stopFormatting = async () => {
     await formatter.stop();
-    log.dispose();
+    logger.dispose();
   };
 
   const computeEdit = async (
@@ -65,34 +65,14 @@ export function activate(context: vscode.ExtensionContext): void {
     if (document.uri.scheme !== "file" || folder === undefined) {
       return undefined;
     }
-    const edit = await formatter.format(document, folder.uri.fsPath, toAbortSignal(token));
-    if (edit === undefined) {
-      return undefined;
-    }
-    const edits: vscode.TextEdit[] = [];
-    if (edit.replacement !== undefined) {
-      const range = new vscode.Range(
-        document.positionAt(edit.replacement.start),
-        document.positionAt(edit.replacement.end),
-      );
-      edits.push(vscode.TextEdit.replace(range, edit.replacement.text));
-    }
-    if (edit.lineEnding !== undefined) {
-      edits.push(
-        vscode.TextEdit.setEndOfLine(
-          edit.lineEnding === "\r\n" ? vscode.EndOfLine.CRLF : vscode.EndOfLine.LF,
-        ),
-      );
-    }
-    const workspaceEdit = new vscode.WorkspaceEdit();
-    workspaceEdit.set(document.uri, edits);
-    return workspaceEdit;
+    const formatEdit = await formatter.format(document, folder.uri.fsPath, toAbortSignal(token));
+    return formatEdit === undefined ? undefined : toWorkspaceEdit(document, formatEdit);
   };
 
   const codeActionProvider: vscode.CodeActionProvider<SpotlessCodeAction> = {
     provideCodeActions(document, _range, { only, triggerKind }) {
       return only?.contains(codeActionKind) &&
-        (triggerKind === vscode.CodeActionTriggerKind.Invoke || enabledOnSave(document))
+        (triggerKind === vscode.CodeActionTriggerKind.Invoke || isEnabledOnSave(document))
         ? [new SpotlessCodeAction(document)]
         : [];
     },
@@ -141,7 +121,7 @@ export async function deactivate(): Promise<void> {
   await stopFormatting?.();
 }
 
-function enabledOnSave(document: vscode.TextDocument): boolean {
+function isEnabledOnSave(document: vscode.TextDocument): boolean {
   const setting = vscode.workspace
     .getConfiguration("editor", document)
     .get<Record<string, unknown> | string[]>("codeActionsOnSave");
@@ -149,6 +129,30 @@ function enabledOnSave(document: vscode.TextDocument): boolean {
     ? setting.includes(codeActionKind.value)
     : setting?.[codeActionKind.value];
   return Boolean(value) && value !== "never";
+}
+
+function toWorkspaceEdit(
+  document: vscode.TextDocument,
+  formatEdit: FormatEdit,
+): vscode.WorkspaceEdit {
+  const textEdits: vscode.TextEdit[] = [];
+  if (formatEdit.replacement !== undefined) {
+    const range = new vscode.Range(
+      document.positionAt(formatEdit.replacement.start),
+      document.positionAt(formatEdit.replacement.end),
+    );
+    textEdits.push(vscode.TextEdit.replace(range, formatEdit.replacement.text));
+  }
+  if (formatEdit.lineEnding !== undefined) {
+    textEdits.push(
+      vscode.TextEdit.setEndOfLine(
+        formatEdit.lineEnding === "\r\n" ? vscode.EndOfLine.CRLF : vscode.EndOfLine.LF,
+      ),
+    );
+  }
+  const edit = new vscode.WorkspaceEdit();
+  edit.set(document.uri, textEdits);
+  return edit;
 }
 
 function toAbortSignal(token: vscode.CancellationToken): AbortSignal {

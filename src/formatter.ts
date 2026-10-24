@@ -20,7 +20,7 @@ export interface Backends {
 
 export type LineEnding = "\n" | "\r\n";
 
-export interface FormatTarget {
+export interface Document {
   readonly fileName: string;
   readonly version: number;
   readonly encoding: string;
@@ -43,24 +43,24 @@ export interface Logger {
 export class SpotlessFormatter {
   private readonly queue = new SerialQueue();
   private readonly stopping = new AbortController();
-  private readonly withoutSpotless = new Set<string>();
+  private readonly projectsWithoutSpotless = new Set<string>();
 
   constructor(
     private readonly backends: Backends,
     private readonly codec: Codec,
-    private readonly log: Logger,
+    private readonly logger: Logger,
     private readonly showStatus: (message: string) => void,
   ) {}
 
   async format(
-    document: FormatTarget,
+    document: Document,
     workspaceFolder: string,
     signal: AbortSignal,
   ): Promise<FormatEdit | undefined> {
     const file = document.fileName;
     const build = detectBuild(file, workspaceFolder);
     if (build === undefined) {
-      this.log.debug(`No Gradle or Maven build found for ${file}`);
+      this.logger.debug(`No Gradle or Maven build found for ${file}`);
       return undefined;
     }
     const version = document.version;
@@ -81,7 +81,7 @@ export class SpotlessFormatter {
       return undefined;
     }
     if (document.version !== version) {
-      this.log.info(
+      this.logger.info(
         `Discarded the Spotless result for ${file} because it changed while formatting`,
       );
       return undefined;
@@ -95,7 +95,7 @@ export class SpotlessFormatter {
   }
 
   buildFileChanged(): void {
-    this.withoutSpotless.clear();
+    this.projectsWithoutSpotless.clear();
   }
 
   private async run(
@@ -108,8 +108,8 @@ export class SpotlessFormatter {
     const project = build.tool === "maven" ? build.module : build.root;
     try {
       const output = await this.queue.run(build.root, signal, async () => {
-        if (this.withoutSpotless.has(project)) {
-          this.log.debug(`Ran no build for ${file} because ${project} has no Spotless`);
+        if (this.projectsWithoutSpotless.has(project)) {
+          this.logger.debug(`Ran no build for ${file} because ${project} has no Spotless`);
           return undefined;
         }
         const started = Date.now();
@@ -118,12 +118,12 @@ export class SpotlessFormatter {
             ? this.backends.gradle({ build, file, hookFiles, signal })
             : this.backends.maven({ build, file, hookFiles, signal }),
         );
-        this.log.debug(
+        this.logger.debug(
           `Spotless (${build.tool}) ran in ${String(Date.now() - started)} ms for ${file}`,
         );
         if (interpretHookOutput(output).kind === "noSpotless") {
-          this.withoutSpotless.add(project);
-          this.log.info(
+          this.projectsWithoutSpotless.add(project);
+          this.logger.info(
             `Found no Spotless in ${project}, so saves there run no build until a build file changes`,
           );
         }
@@ -133,9 +133,9 @@ export class SpotlessFormatter {
       return output;
     } catch (error) {
       if (signal.aborted) {
-        this.log.debug(`Cancelled Spotless for ${file}`);
+        this.logger.debug(`Cancelled Spotless for ${file}`);
       } else {
-        this.log.error(`Could not run Spotless for ${file}: ${String(error)}`);
+        this.logger.error(`Could not run Spotless for ${file}: ${String(error)}`);
       }
       return undefined;
     }
@@ -144,27 +144,27 @@ export class SpotlessFormatter {
   private report(file: string, result: HookResult, output: HookOutput): void {
     switch (result.kind) {
       case "failed":
-        this.log.error(
+        this.logger.error(
           `Spotless failed for ${file} (exit code ${String(output.exitCode)})\n${output.log}`,
         );
         return;
       case "multipleFormats":
-        this.log.warn(
+        this.logger.warn(
           `${file} is a target of more than one Spotless format; it was not formatted.`,
         );
         this.showStatus("$(warning) Spotless: multiple formats match this file");
         return;
       case "didNotConverge":
-        this.log.warn(`Spotless did not converge for ${file}`);
+        this.logger.warn(`Spotless did not converge for ${file}`);
         return;
       default:
-        this.log.debug(`${file}: ${result.kind}\n${output.log}`);
+        this.logger.debug(`${file}: ${result.kind}\n${output.log}`);
     }
   }
 }
 
 function toFormatEdit(
-  text: string,
+  original: string,
   lineEnding: LineEnding,
   formatted: string,
 ): FormatEdit | undefined {
@@ -173,7 +173,7 @@ function toFormatEdit(
     : formatted.includes("\n")
       ? "\n"
       : lineEnding;
-  const replacement = minimalEdit(text, formatted.replace(/\r?\n/g, lineEnding));
+  const replacement = minimalEdit(original, formatted.replace(/\r?\n/g, lineEnding));
   const changedLineEnding = formattedLineEnding === lineEnding ? undefined : formattedLineEnding;
   return replacement === undefined && changedLineEnding === undefined
     ? undefined

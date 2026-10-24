@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { Backends, FormatEdit, FormatTarget, Logger } from "../../src/formatter";
+import type { Backends, Document, FormatEdit, Logger } from "../../src/formatter";
 import { SpotlessFormatter } from "../../src/formatter";
 import type { Codec } from "../../src/hook";
 
@@ -18,7 +18,7 @@ afterEach(() => {
   rmSync(workspace, { recursive: true, force: true });
 });
 
-class FakeDocument implements FormatTarget {
+class FakeDocument implements Document {
   version = 1;
   readonly encoding = "utf8";
 
@@ -50,37 +50,38 @@ interface Spotless {
   readonly log?: string;
 }
 
-function mavenBuild(
+function fakeMaven(
   spotless: Spotless,
   onRun: (stdin: string) => void = () => undefined,
-): Backends {
-  return {
-    gradle: () => Promise.reject(new Error("unexpected Gradle build")),
-    maven: async ({ hookFiles }) => {
-      onRun(await readFile(hookFiles.stdin, "utf8"));
-      await writeFile(hookFiles.stdout, spotless.stdout ?? "");
-      await writeFile(hookFiles.stderr, spotless.stderr ?? "");
-      return { exitCode: spotless.exitCode ?? 0, log: spotless.log ?? "" };
-    },
+): Backends["maven"] {
+  return async ({ hookFiles }) => {
+    onRun(await readFile(hookFiles.stdin, "utf8"));
+    await writeFile(hookFiles.stdout, spotless.stdout ?? "");
+    await writeFile(hookFiles.stderr, spotless.stderr ?? "");
+    return { exitCode: spotless.exitCode ?? 0, log: spotless.log ?? "" };
   };
 }
 
-function setUp(backends: Backends) {
+function setUp(maven: Backends["maven"]) {
   const lines: string[] = [];
   const statuses: string[] = [];
   const record = (level: string) => (message: string) => {
     lines.push(`${level}: ${message}`);
   };
-  const log: Logger = {
+  const logger: Logger = {
     debug: record("debug"),
     info: record("info"),
     warn: record("warn"),
     error: record("error"),
   };
-  const formatter = new SpotlessFormatter(backends, utf8, log, (message) => {
+  const backends: Backends = {
+    gradle: () => Promise.reject(new Error("unexpected Gradle build")),
+    maven,
+  };
+  const formatter = new SpotlessFormatter(backends, utf8, logger, (message) => {
     statuses.push(message);
   });
-  const format = (document: FormatTarget, signal = new AbortController().signal) =>
+  const format = (document: Document, signal = new AbortController().signal) =>
     formatter.format(document, workspace, signal);
   return { formatter, format, lines, statuses };
 }
@@ -105,7 +106,7 @@ const withoutSpotless = {
 
 describe("SpotlessFormatter", () => {
   it("returns an edit that turns the buffer into the Spotless output", async () => {
-    const { format } = setUp(mavenBuild(dirty));
+    const { format } = setUp(fakeMaven(dirty));
     await expect(format(new FakeDocument("class  A {}\n"))).resolves.toEqual({
       replacement: { start: 6, end: 7, text: "" },
       lineEnding: undefined,
@@ -115,7 +116,7 @@ describe("SpotlessFormatter", () => {
   it("discards the result when the user typed while Spotless ran, so the typed characters are not lost", async () => {
     const document = new FakeDocument("class  A {}\n");
     const { format, lines } = setUp(
-      mavenBuild(dirty, () => {
+      fakeMaven(dirty, () => {
         document.type("// typed while formatting\n");
       }),
     );
@@ -126,7 +127,7 @@ describe("SpotlessFormatter", () => {
   it("sends the buffer text, not the file on disk, to the build, because the unsaved text is what gets saved", async () => {
     let received = "";
     const { format } = setUp(
-      mavenBuild(dirty, (stdin) => {
+      fakeMaven(dirty, (stdin) => {
         received = stdin;
       }),
     );
@@ -136,7 +137,7 @@ describe("SpotlessFormatter", () => {
 
   it("warns in the log and the status bar when a file matches several formats, instead of applying a wrong result", async () => {
     const { format, lines, statuses } = setUp(
-      mavenBuild({ ...dirty, stderr: "IS DIRTY\nIS DIRTY\n" }),
+      fakeMaven({ ...dirty, stderr: "IS DIRTY\nIS DIRTY\n" }),
     );
     await expect(format(new FakeDocument("x\n"))).resolves.toBeUndefined();
     expect(lines.some((line) => line.startsWith("warn: "))).toBe(true);
@@ -145,7 +146,7 @@ describe("SpotlessFormatter", () => {
 
   it("logs the build output of a failed run without throwing, so a syntax error only leaves a log entry", async () => {
     const { format, lines } = setUp(
-      mavenBuild({
+      fakeMaven({
         exitCode: 1,
         log: "[ERROR] Step 'google-java-format' found problem",
       }),
@@ -160,7 +161,7 @@ describe("SpotlessFormatter", () => {
     rmSync(path.join(workspace, "pom.xml"));
     let builds = 0;
     const { format, lines } = setUp(
-      mavenBuild(dirty, () => {
+      fakeMaven(dirty, () => {
         builds++;
       }),
     );
@@ -172,7 +173,7 @@ describe("SpotlessFormatter", () => {
   it("does not apply a result that arrives after the save was cancelled", async () => {
     const controller = new AbortController();
     const { format } = setUp(
-      mavenBuild(dirty, () => {
+      fakeMaven(dirty, () => {
         controller.abort();
       }),
     );
@@ -182,19 +183,16 @@ describe("SpotlessFormatter", () => {
   it("stops the running build and deletes the copy of the buffer before stop() resolves, so quitting VS Code leaves neither behind", async () => {
     const started = Promise.withResolvers<string>();
     let buildEnded = false;
-    const { formatter, format } = setUp({
-      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
-      maven: ({ hookFiles, signal }) => {
-        started.resolve(hookFiles.stdin);
-        return new Promise((_resolve, reject) => {
-          signal.addEventListener("abort", () => {
-            setTimeout(() => {
-              buildEnded = true;
-              reject(signal.reason as Error);
-            }, 50);
-          });
+    const { formatter, format } = setUp(({ hookFiles, signal }) => {
+      started.resolve(hookFiles.stdin);
+      return new Promise((_resolve, reject) => {
+        signal.addEventListener("abort", () => {
+          setTimeout(() => {
+            buildEnded = true;
+            reject(signal.reason as Error);
+          }, 50);
         });
-      },
+      });
     });
     const formatting = format(new FakeDocument("unsaved secret\n"));
     const stdin = await started.promise;
@@ -207,7 +205,7 @@ describe("SpotlessFormatter", () => {
   it("starts no build for a save that arrives after stop(), so nothing is left running once VS Code has quit", async () => {
     let builds = 0;
     const { formatter, format } = setUp(
-      mavenBuild(dirty, () => {
+      fakeMaven(dirty, () => {
         builds++;
       }),
     );
@@ -221,7 +219,7 @@ describe("SpotlessFormatter in a build without Spotless", () => {
   it("runs a build only for the first save and logs that once instead of an error, so a user-wide setting does not slow down every save in projects without Spotless", async () => {
     let builds = 0;
     const { format, lines } = setUp(
-      mavenBuild(withoutSpotless, () => {
+      fakeMaven(withoutSpotless, () => {
         builds++;
       }),
     );
@@ -235,7 +233,7 @@ describe("SpotlessFormatter in a build without Spotless", () => {
   it("runs one build for saves that queued up behind the first, as Save All does", async () => {
     let builds = 0;
     const { format } = setUp(
-      mavenBuild(withoutSpotless, () => {
+      fakeMaven(withoutSpotless, () => {
         builds++;
       }),
     );
@@ -245,10 +243,7 @@ describe("SpotlessFormatter in a build without Spotless", () => {
 
   it("formats again once a build file changes, so adding Spotless takes effect without reloading the window", async () => {
     let spotless: Spotless = withoutSpotless;
-    const { formatter, format } = setUp({
-      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
-      maven: (request) => mavenBuild(spotless).maven(request),
-    });
+    const { formatter, format } = setUp((request) => fakeMaven(spotless)(request));
     await format(new FakeDocument("class  A {}\n"));
     spotless = dirty;
     await expect(format(new FakeDocument("class  A {}\n"))).resolves.toBeUndefined();
@@ -263,14 +258,9 @@ describe("SpotlessFormatter in a build without Spotless", () => {
     mkdirSync(path.join(workspace, "app"));
     writeFileSync(path.join(workspace, "app", "pom.xml"), "");
     const modules: string[] = [];
-    const { format } = setUp({
-      gradle: () => Promise.reject(new Error("unexpected Gradle build")),
-      maven: (request) => {
-        modules.push(request.build.module);
-        return mavenBuild(request.build.module === workspace ? dirty : withoutSpotless).maven(
-          request,
-        );
-      },
+    const { format } = setUp((request) => {
+      modules.push(request.build.module);
+      return fakeMaven(request.build.module === workspace ? dirty : withoutSpotless)(request);
     });
     const inApp = path.join(workspace, "app", "A.java");
     await format(new FakeDocument("class  A {}\n", 1, inApp));
@@ -282,7 +272,7 @@ describe("SpotlessFormatter in a build without Spotless", () => {
   it("keeps running a build on every save after an ordinary failure, so fixing a syntax error formats the next save", async () => {
     let builds = 0;
     const { format } = setUp(
-      mavenBuild({ exitCode: 1, log: "[ERROR] Step 'google-java-format' found problem" }, () => {
+      fakeMaven({ exitCode: 1, log: "[ERROR] Step 'google-java-format' found problem" }, () => {
         builds++;
       }),
     );
@@ -296,7 +286,7 @@ describe("SpotlessFormatter line endings", () => {
   it("switches an LF buffer to the CRLF that Spotless produced without leaving a stray CR that the editor would turn into a blank line", async () => {
     const original = "class A {\nint  x;\n}\n";
     const formatted = "class A {\r\n  int x;\r\n}\r\n";
-    const { format } = setUp(mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }));
+    const { format } = setUp(fakeMaven({ stdout: formatted, stderr: "IS DIRTY\n" }));
     const edit = await format(new FakeDocument(original, 1));
     expect(edit?.lineEnding).toBe("\r\n");
     expect(edit?.replacement?.text).not.toContain("\r");
@@ -306,7 +296,7 @@ describe("SpotlessFormatter line endings", () => {
   it("switches a CRLF buffer to the LF that Spotless produced with a small edit instead of replacing the whole document", async () => {
     const original = "class A {\r\nint  x;\r\n}\r\n";
     const formatted = "class A {\n  int x;\n}\n";
-    const { format } = setUp(mavenBuild({ stdout: formatted, stderr: "IS DIRTY\n" }));
+    const { format } = setUp(fakeMaven({ stdout: formatted, stderr: "IS DIRTY\n" }));
     const edit = await format(new FakeDocument(original, 2));
     expect(edit?.lineEnding).toBe("\n");
     const replaced = (edit?.replacement?.end ?? 0) - (edit?.replacement?.start ?? 0);
@@ -315,7 +305,7 @@ describe("SpotlessFormatter line endings", () => {
   });
 
   it("changes only the line endings when that is all Spotless changed, so the text itself is left untouched", async () => {
-    const { format } = setUp(mavenBuild({ stdout: "a\nb\n", stderr: "IS DIRTY\n" }));
+    const { format } = setUp(fakeMaven({ stdout: "a\nb\n", stderr: "IS DIRTY\n" }));
     await expect(format(new FakeDocument("a\r\nb\r\n", 2))).resolves.toEqual({
       replacement: undefined,
       lineEnding: "\n",

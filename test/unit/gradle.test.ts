@@ -18,7 +18,7 @@ afterEach(() => {
   rmSync(base, { recursive: true, force: true });
 });
 
-const files = { stdin: "/tmp/in", stdout: "/tmp/out", stderr: "/tmp/err" };
+const hookFiles = { stdin: "/tmp/in", stdout: "/tmp/out", stderr: "/tmp/err" };
 
 type RunOptions = Parameters<GradleApi["runBuild"]>[0];
 
@@ -42,14 +42,14 @@ function request(signal = new AbortController().signal) {
   return {
     build: { tool: "gradle" as const, root: base },
     file,
-    hookFiles: files,
+    hookFiles,
     signal,
   };
 }
 
 describe("gradleArgs", () => {
   it("routes Spotless's input and output through files via the init script, so build script output never ends up in the source", async () => {
-    const args = await gradleArgs(file, files, "/ext/spotless-for-gradle-and-maven.gradle");
+    const args = await gradleArgs(file, hookFiles, "/ext/spotless-for-gradle-and-maven.gradle");
     expect(args).toEqual(
       expect.arrayContaining([
         "--init-script",
@@ -64,7 +64,7 @@ describe("gradleArgs", () => {
   });
 
   it("runs the projects one at a time even when the build enables parallel execution, because the init script swaps System.in, System.out and System.err for the whole daemon JVM, so a Spotless task running at the same time would lose the buffer or the formatted output", async () => {
-    const args = await gradleArgs(file, files, "/init.gradle");
+    const args = await gradleArgs(file, hookFiles, "/init.gradle");
     expect(args).toContain("--no-parallel");
   });
 
@@ -72,12 +72,12 @@ describe("gradleArgs", () => {
     mkdirSync(path.join(base, "real"));
     writeFileSync(path.join(base, "real", "B.java"), "");
     symlinkSync(path.join(base, "real"), path.join(base, "link"));
-    const args = await gradleArgs(path.join(base, "link", "B.java"), files, "/init.gradle");
+    const args = await gradleArgs(path.join(base, "link", "B.java"), hookFiles, "/init.gradle");
     expect(args).toContain(`-PspotlessIdeHook=${realpathSync(path.join(base, "real", "B.java"))}`);
   });
 
   it("leaves the configuration cache as the build sets it, because Gradle refuses to run a build with Isolated Projects enabled when the configuration cache is turned off", async () => {
-    const args = await gradleArgs(file, files, "/init.gradle");
+    const args = await gradleArgs(file, hookFiles, "/init.gradle");
     expect(args.filter((arg) => arg.includes("configuration-cache"))).toEqual([]);
   });
 });
@@ -85,7 +85,7 @@ describe("gradleArgs", () => {
 describe("runGradle", () => {
   it("sends no buffer text through Gradle's stdin, which would re-encode it with the daemon's charset", async () => {
     const { api, runs } = fakeGradle(() => Promise.resolve());
-    await runGradle(request(), api, "/init.gradle");
+    await runGradle(request(), { api, initScript: "/init.gradle" });
     expect(runs.map((run) => run.input)).toEqual([""]);
   });
 
@@ -96,7 +96,7 @@ describe("runGradle", () => {
       });
       return Promise.reject(new Error("Build failed"));
     });
-    const result = await runGradle(request(), api, "/init.gradle");
+    const result = await runGradle(request(), { api, initScript: "/init.gradle" });
     expect(result.exitCode).toBe(1);
     expect(result.log).toContain("Task 'spotlessApply' not found");
     expect(result.log).toContain("Build failed");
@@ -105,7 +105,7 @@ describe("runGradle", () => {
   it("settles as soon as the save is cancelled and cancels the build, even when the Gradle server never answers", async () => {
     const { api, runs, cancelled } = fakeGradle(() => new Promise<void>(() => undefined));
     const controller = new AbortController();
-    const running = runGradle(request(controller.signal), api, "/init.gradle");
+    const running = runGradle(request(controller.signal), { api, initScript: "/init.gradle" });
     await expect.poll(() => runs.length).toBe(1);
     controller.abort();
     await expect(running).rejects.toThrow();
@@ -116,7 +116,9 @@ describe("runGradle", () => {
     const { api, runs } = fakeGradle(() => Promise.resolve());
     const controller = new AbortController();
     controller.abort();
-    await expect(runGradle(request(controller.signal), api, "/init.gradle")).rejects.toThrow();
+    await expect(
+      runGradle(request(controller.signal), { api, initScript: "/init.gradle" }),
+    ).rejects.toThrow();
     expect(runs).toEqual([]);
   });
 
@@ -125,9 +127,9 @@ describe("runGradle", () => {
     const commaFile = path.join(base, "a,b", "A.java");
     writeFileSync(commaFile, "");
     const { api, runs } = fakeGradle(() => Promise.resolve());
-    await expect(runGradle({ ...request(), file: commaFile }, api, "/init.gradle")).rejects.toThrow(
-      "path contains a comma",
-    );
+    await expect(
+      runGradle({ ...request(), file: commaFile }, { api, initScript: "/init.gradle" }),
+    ).rejects.toThrow("path contains a comma");
     expect(runs).toEqual([]);
   });
 });
