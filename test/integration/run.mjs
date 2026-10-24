@@ -165,6 +165,27 @@ function mustRun(command, args, cwd = root) {
   }
 }
 
+function commitToOwnRepository(dir) {
+  mustRun("git", ["init", "-q"], dir);
+  mustRun("git", ["add", "."], dir);
+  mustRun(
+    "git",
+    [
+      "-c",
+      "user.name=test",
+      "-c",
+      "user.email=test@example.com",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "-q",
+      "-m",
+      "ratchetFrom baseline",
+    ],
+    dir,
+  );
+}
+
 function unusualWorkspace() {
   const dir = path.join(cache, "café & 100% ^");
   rmSync(dir, { recursive: true, force: true });
@@ -188,6 +209,8 @@ for (const file of readdirSync(fixtures, {
 }
 copyFixtures(fixtures, prepared);
 applyProfile(prepared);
+commitToOwnRepository(path.join(prepared, "gradle", "ratchet"));
+commitToOwnRepository(path.join(prepared, "maven", "ratchet"));
 
 for (const project of ["formatter-config", "hang-extension"]) {
   mustRun("mvn", [
@@ -203,25 +226,6 @@ for (const dir of projects(prepared, "maven", "pom.xml")) {
   mustRun("mvn", ["-q", "-B", "com.diffplug.spotless:spotless-maven-plugin:check"], dir);
 }
 mustRun(wrapper("mvnw"), ["-q", "-B", "validate"], path.join(prepared, "maven", "single"));
-const ratchet = path.join(prepared, "gradle", "ratchet");
-mustRun("git", ["init", "-q"], ratchet);
-mustRun("git", ["add", "."], ratchet);
-mustRun(
-  "git",
-  [
-    "-c",
-    "user.name=test",
-    "-c",
-    "user.email=test@example.com",
-    "-c",
-    "commit.gpgsign=false",
-    "commit",
-    "-q",
-    "-m",
-    "ratchetFrom baseline",
-  ],
-  ratchet,
-);
 for (const dir of projects(prepared, "gradle", "settings.gradle")) {
   mustRun(wrapper("gradlew"), ["-q", "spotlessCheck"], dir);
 }

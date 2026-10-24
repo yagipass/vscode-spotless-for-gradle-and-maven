@@ -11,6 +11,7 @@ import {
   expectFormattedOnSave,
   expectLog,
   expectNoProcess,
+  googleFormatted,
   openWithUnsavedText,
   placeholder,
   readDisk,
@@ -101,6 +102,19 @@ suite(`Maven configuration from a plugin dependency (${expectedExecutable})`, ()
 
 suite(`Maven Shift_JIS sources (${expectedExecutable})`, () => {
   shiftJisTest(() => sourceDir("sjis"));
+});
+
+suite(`Maven build with ratchetFrom (${expectedExecutable})`, () => {
+  test("formats an edited file that matched the ratchet ref on the next save, as spotless:apply would, although the mvnd daemon listed the files that differ from the ratchet ref while it still matched", async () => {
+    const uri = await restoreAfterTest(path.join(sourceDir("ratchet"), "Sample.java"));
+    const edited = `/* (C) 2020 */\n${unformatted("Sample")}`;
+    await save(await openWithUnsavedText(uri, edited));
+    await save(await openWithUnsavedText(uri, `${edited}\n`));
+    assert.equal(
+      await readDisk(uri),
+      `/* (C) 2020-${String(new Date().getFullYear())} */\n${googleFormatted("Sample")}`,
+    );
+  });
 });
 
 suite(`Maven cancellation (${expectedExecutable})`, () => {
