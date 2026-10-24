@@ -73,7 +73,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 - A file that more than one Spotless format targets is not formatted, and a warning is logged.
 - Steps that use npm, such as prettier, take several seconds.
 - In a build or Maven module without Spotless, only the first save runs a build. Saves there run one again after a `pom.xml`, `*.gradle` or `*.gradle.kts` file in the workspace changes, or after **Developer: Reload Window**.
-- Formatting does not run when `files.autoSave` is `afterDelay`, because VS Code runs no code actions on auto save.
+- Auto saves are formatted only when `files.autoSave` is `onFocusChange` or `onWindowChange` and the code action is set to `"always"` instead of `"explicit"`. With `afterDelay`, VS Code runs no code actions on auto save, but **File: Save** still formats.
 - In Gradle builds, a file whose path contains a comma is not formatted, and an error is logged, because the Spotless Gradle plugin reads the comma as a separator between files.
 - In Maven builds, a file in a module is formatted only with the module's Spotless configuration, including what it inherits, and its includes are relative to the module's directory. Includes in a parent POM that name a path inside a module, such as `app/docs/*.md` at the root, are not supported.
 - In Maven builds, saving a file in a project that the topmost `pom.xml` in the workspace does not include as a module, such as a standalone sample or a module listed only in an inactive profile, runs Maven twice, the second time in that project's directory.
