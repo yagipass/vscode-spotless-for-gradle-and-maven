@@ -69,7 +69,7 @@ If a saved file is not formatted, open the Output panel and select **Spotless fo
 
 ## Limitations
 
-- In Maven builds with `ratchetFrom`, the first save after a change is not formatted, but the next save is.
+- In Maven builds with `ratchetFrom` and spotless-maven-plugin before 3.2.0, the first save after a change is not formatted, but the next save is.
 - A file that more than one Spotless format targets is not formatted, and a warning is logged.
 - Steps that use npm, such as prettier, take several seconds.
 - In a build or Maven module without Spotless, only the first save runs a build. Saves there run one again after a `pom.xml`, `*.gradle` or `*.gradle.kts` file in the workspace changes, or after **Developer: Reload Window**.
