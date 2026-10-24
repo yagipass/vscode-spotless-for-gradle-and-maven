@@ -105,15 +105,53 @@ suite(`Maven Shift_JIS sources (${expectedExecutable})`, () => {
 });
 
 suite(`Maven build with ratchetFrom (${expectedExecutable})`, () => {
-  test("formats an edited file that matched the ratchet ref on the next save, as spotless:apply would, although the mvnd daemon listed the files that differ from the ratchet ref while it still matched", async () => {
+  test("formats the first save after an edit as spotless:apply would after that save, license header year included, although the file on disk still matches the ratchet ref, with spotless-maven-plugin 3.2.0 or later", async function () {
+    const [major = 0, minor = 0] = await spotlessMavenVersion("ratchet");
+    if (major < 3 || (major === 3 && minor < 2)) {
+      this.skip();
+    }
     const uri = await restoreAfterTest(path.join(sourceDir("ratchet"), "Sample.java"));
-    const edited = `/* (C) 2020 */\n${unformatted("Sample")}`;
-    await save(await openWithUnsavedText(uri, edited));
-    await save(await openWithUnsavedText(uri, `${edited}\n`));
+    await save(await openWithUnsavedText(uri, `/* (C) 2020 */\n${unformatted("Sample")}`));
     assert.equal(
       await readDisk(uri),
       `/* (C) 2020-${String(new Date().getFullYear())} */\n${googleFormatted("Sample")}`,
     );
+  });
+
+  test("formats a file saved without formatting on the next Format Document, as spotless:apply would, although the mvnd daemon listed the files that differ from the ratchet ref while the file still matched it", async () => {
+    const uri = await restoreAfterTest(path.join(sourceDir("ratchet"), "Saved.java"));
+    await vscode.window.showTextDocument(uri);
+    await vscode.commands.executeCommand("spotlessForGradleAndMaven.formatDocument");
+    await expectLog(/Saved\.java: notCovered/);
+    const edited = `/* (C) 2020 */\n${unformatted("Saved")}`;
+    const document = await openWithUnsavedText(uri, edited);
+    await vscode.commands.executeCommand("workbench.action.files.saveWithoutFormatting");
+    assert.equal(await readDisk(uri), edited);
+    await vscode.commands.executeCommand("spotlessForGradleAndMaven.formatDocument");
+    assert.equal(
+      document.getText(),
+      `/* (C) 2020-${String(new Date().getFullYear())} */\n${googleFormatted("Saved")}`,
+    );
+  });
+
+  test("leaves an unedited file that matches the ratchet ref as it is, as spotless:apply does, so opening and saving an old file does not reformat it", async () => {
+    const uri = vscode.Uri.file(path.join(sourceDir("ratchet"), "Legacy.java"));
+    const original = await readDisk(uri);
+    const editor = await vscode.window.showTextDocument(uri);
+    await vscode.commands.executeCommand("spotlessForGradleAndMaven.formatDocument");
+    assert.equal(editor.document.getText(), original);
+    await expectLog(/Legacy\.java: notCovered/);
+  });
+
+  test("leaves an edited file that Git ignores as it is, as spotless:apply does, although the buffer differs from the file on disk", async () => {
+    const uri = await createFile(
+      path.join(sourceDir("ratchet"), "generated", "TmpGenerated.java"),
+      placeholder("TmpGenerated"),
+    );
+    const document = await openWithUnsavedText(uri, unformatted("TmpGenerated"));
+    await save(document);
+    assert.equal(document.getText(), unformatted("TmpGenerated"));
+    await expectLog(/TmpGenerated\.java: notCovered/);
   });
 });
 
@@ -150,4 +188,16 @@ function isRunning(pid: number): boolean {
   } catch (error) {
     return (error as NodeJS.ErrnoException).code === "EPERM";
   }
+}
+
+async function spotlessMavenVersion(project: string): Promise<number[]> {
+  const pom = await readFile(workspacePath(project, "pom.xml"), "utf8");
+  const version = /<artifactId>spotless-maven-plugin<\/artifactId>\s*<version>([^<]+)</.exec(
+    pom,
+  )?.[1];
+  assert.ok(
+    version !== undefined,
+    `${project}/pom.xml does not set a spotless-maven-plugin version`,
+  );
+  return version.split(".").map(Number);
 }
