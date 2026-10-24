@@ -14,7 +14,7 @@ import org.apache.maven.eventspy.AbstractEventSpy;
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.plugin.MojoExecution;
 
-@Named("spotlessForGradleAndMavenIo")
+@Named("spotlessForGradleAndMavenIoRedirect")
 @Singleton
 public class IoRedirectSpy extends AbstractEventSpy {
 
@@ -42,16 +42,16 @@ public class IoRedirectSpy extends AbstractEventSpy {
       return;
     }
     Properties properties = executionEvent.getSession().getUserProperties();
-    String stdin = properties.getProperty("spotlessForGradleAndMaven.stdin");
-    String stdout = properties.getProperty("spotlessForGradleAndMaven.stdout");
-    String stderr = properties.getProperty("spotlessForGradleAndMaven.stderr");
-    if (stdin == null || stdout == null || stderr == null) {
+    String stdinPath = properties.getProperty(PropertyNames.STDIN);
+    String stdoutPath = properties.getProperty(PropertyNames.STDOUT);
+    String stderrPath = properties.getProperty(PropertyNames.STDERR);
+    if (stdinPath == null || stdoutPath == null || stderrPath == null) {
       return;
     }
     switch (executionEvent.getType()) {
       case MojoStarted:
         if (running++ == 0) {
-          redirect(stdin, stdout, stderr);
+          redirect(stdinPath, stdoutPath, stderrPath);
         }
         break;
       case MojoSucceeded:
@@ -64,15 +64,15 @@ public class IoRedirectSpy extends AbstractEventSpy {
     }
   }
 
-  private void redirect(String stdin, String stdout, String stderr) {
-    stderrPath = stderr;
+  private void redirect(String stdinPath, String stdoutPath, String stderrPath) {
+    this.stderrPath = stderrPath;
     originalIn = System.in;
     originalOut = System.out;
     originalErr = System.err;
     try {
-      in = new FileInputStream(stdin);
-      out = new Unclosable(new FileOutputStream(stdout, true));
-      err = new Unclosable(new FileOutputStream(stderr, true));
+      in = new FileInputStream(stdinPath);
+      out = new Unclosable(new FileOutputStream(stdoutPath, true));
+      err = new Unclosable(new FileOutputStream(stderrPath, true));
     } catch (IOException e) {
       closeStreams();
       in = new ByteArrayInputStream(new byte[0]);

@@ -15,8 +15,6 @@ import org.apache.maven.project.MavenProject;
 @Singleton
 public class IdeHookPathSpy extends AbstractEventSpy {
 
-  private static final String HOOK = "spotlessIdeHook";
-
   @Override
   public void onEvent(Object event) {
     if (!(event instanceof ExecutionEvent)) {
@@ -27,22 +25,22 @@ public class IdeHookPathSpy extends AbstractEventSpy {
       return;
     }
     MavenSession session = executionEvent.getSession();
-    String hook = session.getUserProperties().getProperty(HOOK);
-    String module = session.getUserProperties().getProperty("spotlessForGradleAndMaven.module");
+    String hookPath = session.getUserProperties().getProperty(PropertyNames.IDE_HOOK);
+    String modulePath = session.getUserProperties().getProperty(PropertyNames.MODULE);
     List<MavenProject> projects = session.getProjects();
-    if (hook == null || module == null || projects.size() != 1) {
+    if (hookPath == null || modulePath == null || projects.size() != 1) {
       return;
     }
-    Path relative = new File(module).toPath().relativize(new File(hook).toPath());
+    Path relative = new File(modulePath).toPath().relativize(new File(hookPath).toPath());
     if (relative.startsWith("..")) {
       return;
     }
-    String path = new File(projects.get(0).getBasedir(), relative.toString()).getPath();
+    String rebasedHookPath = new File(projects.get(0).getBasedir(), relative.toString()).getPath();
     // Mojo parameters read the system properties after the user properties, and -D sets both.
     for (Properties properties :
         new Properties[] {session.getUserProperties(), session.getSystemProperties()}) {
-      if (properties.containsKey(HOOK)) {
-        properties.setProperty(HOOK, path);
+      if (properties.containsKey(PropertyNames.IDE_HOOK)) {
+        properties.setProperty(PropertyNames.IDE_HOOK, rebasedHookPath);
       }
     }
   }

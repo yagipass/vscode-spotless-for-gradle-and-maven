@@ -1,7 +1,7 @@
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 
-abstract class SpotlessForGradleAndMavenRedirect implements BuildService<BuildServiceParameters.None>, AutoCloseable {
+abstract class SpotlessForGradleAndMavenIoRedirect implements BuildService<BuildServiceParameters.None>, AutoCloseable {
     private Map redirected
 
     private static PrintStream unclosable(OutputStream stream) {
@@ -19,9 +19,9 @@ abstract class SpotlessForGradleAndMavenRedirect implements BuildService<BuildSe
         def error = new FileOutputStream(stderrPath, true)
         redirected = [
             stderrPath: stderrPath,
-            systemIn: System.in,
-            systemOut: System.out,
-            systemErr: System.err,
+            originalIn: System.in,
+            originalOut: System.out,
+            originalErr: System.err,
             files: [input, output, error],
             out: unclosable(output),
             err: unclosable(error),
@@ -33,9 +33,9 @@ abstract class SpotlessForGradleAndMavenRedirect implements BuildService<BuildSe
 
     synchronized void restore() {
         if (redirected != null) {
-            System.setIn(redirected.systemIn)
-            System.setOut(redirected.systemOut)
-            System.setErr(redirected.systemErr)
+            System.setIn(redirected.originalIn)
+            System.setOut(redirected.originalOut)
+            System.setErr(redirected.originalErr)
             def failed = redirected.out.checkError() | redirected.err.checkError()
             redirected.files*.close()
             if (failed) {
@@ -57,7 +57,7 @@ def stderrPath = properties['spotlessForGradleAndMaven.stderr']
 def hookPath = properties['spotlessIdeHook']
 
 if (stdinPath != null && stdoutPath != null && stderrPath != null && hookPath != null) {
-    def service = gradle.sharedServices.registerIfAbsent('spotlessForGradleAndMavenRedirect', SpotlessForGradleAndMavenRedirect) {
+    def service = gradle.sharedServices.registerIfAbsent('spotlessForGradleAndMavenIoRedirect', SpotlessForGradleAndMavenIoRedirect) {
         maxParallelUsages.set(1)
     }
     gradle.taskGraph.whenReady { graph ->

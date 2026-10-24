@@ -16,6 +16,7 @@ export type Build = GradleBuild | MavenBuild;
 
 const gradleSettings = ["settings.gradle", "settings.gradle.kts"];
 const gradleMarkers = [...gradleSettings, "build.gradle", "build.gradle.kts"];
+const mavenMarkers = ["pom.xml"];
 
 export function detectBuild(file: string, workspaceFolder: string): Build | undefined {
   const dirs = ancestors(file, workspaceFolder);
@@ -24,8 +25,8 @@ export function detectBuild(file: string, workspaceFolder: string): Build | unde
       const root = dirs.slice(index).find((d) => has(d, gradleSettings));
       return { tool: "gradle", root: root ?? dir };
     }
-    if (has(dir, ["pom.xml"])) {
-      const root = dirs.findLast((d) => has(d, ["pom.xml"]));
+    if (has(dir, mavenMarkers)) {
+      const root = dirs.findLast((d) => has(d, mavenMarkers));
       return { tool: "maven", root: root ?? dir, module: dir };
     }
   }

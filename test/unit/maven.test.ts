@@ -22,15 +22,15 @@ function executable(relative: string, script = ""): string {
   return file;
 }
 
-const files = { stdin: "/tmp/in", stdout: "/tmp/out", stderr: "/tmp/err" };
+const hookFiles = { stdin: "/tmp/in", stdout: "/tmp/out", stderr: "/tmp/err" };
 
 describe("mavenArgs", () => {
   it("selects only the file's module with -pl, so a large reactor does not run Spotless in every module", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/repo", module: "/repo/core/api" },
       "/repo/core/api/src/A.java",
+      hookFiles,
       "/ext/spotless-for-gradle-and-maven-extension.jar",
-      files,
     );
     expect(args).toEqual([
       "-q",
@@ -65,8 +65,8 @@ describe("mavenArgs", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/repo", module: "/repo" },
       "/repo/src/A.java",
+      hookFiles,
       "/ext.jar",
-      files,
     );
     expect(args.slice(4, 6)).toEqual(["-N", "--define"]);
     expect(args).not.toContain("-pl");
@@ -76,8 +76,8 @@ describe("mavenArgs", () => {
     const args = mavenArgs(
       { tool: "maven", root: "C:\\100% ^", module: "C:\\100% ^" },
       "C:\\100% ^\\src\\A.java",
+      hookFiles,
       "/ext.jar",
-      files,
     );
     expect(args.slice(2, 4)).toEqual(["-f", "pom.xml"]);
   });
@@ -86,8 +86,8 @@ describe("mavenArgs", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/repo", module: "/repo" },
       "/repo/src/A.java",
+      hookFiles,
       "/ext.jar",
-      files,
     );
     expect(args.filter((arg) => arg.startsWith("-D"))).toEqual([]);
   });
@@ -96,8 +96,8 @@ describe("mavenArgs", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/link", module: "/link/core" },
       "/link/core/src/A.java",
+      hookFiles,
       "/ext.jar",
-      files,
     );
     expect(args).toContain("spotlessForGradleAndMaven.module=/link/core");
     expect(args).toContain("spotlessIdeHook=/link/core/src/A.java");
@@ -107,8 +107,8 @@ describe("mavenArgs", () => {
     const args = mavenArgs(
       { tool: "maven", root: "/repo", module: "/repo/app" },
       "/repo/app/src/A.java",
+      hookFiles,
       "/ext.jar",
-      files,
     );
     expect(args.join(" ")).toContain("--define mvnd.noModelCache=true");
   });
@@ -182,7 +182,7 @@ describe("runMaven", () => {
         {
           build: { tool: "maven", root: base, module: base },
           file: path.join(base, "A.java"),
-          hookFiles: files,
+          hookFiles,
           signal: new AbortController().signal,
         },
         {
@@ -200,7 +200,7 @@ describe("runMaven", () => {
       {
         build: { tool: "maven", root: base, module: path.join(base, "it") },
         file: path.join(base, "it", "A.java"),
-        hookFiles: files,
+        hookFiles,
         signal: new AbortController().signal,
       },
       { extensionJar: jar, configuredExecutable: executable("bin/mvn", script) },

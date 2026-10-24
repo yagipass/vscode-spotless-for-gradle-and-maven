@@ -24,12 +24,10 @@ public class CancellationSpy extends AbstractEventSpy {
   @Override
   public synchronized void onEvent(Object event) {
     if (event instanceof MavenExecutionRequest) {
-      String stdin =
-          ((MavenExecutionRequest) event)
-              .getUserProperties()
-              .getProperty("spotlessForGradleAndMaven.stdin");
-      if (stdin != null) {
-        watch(new File(stdin));
+      String stdinPath =
+          ((MavenExecutionRequest) event).getUserProperties().getProperty(PropertyNames.STDIN);
+      if (stdinPath != null) {
+        watch(new File(stdinPath));
       }
     } else if (event instanceof MavenExecutionResult) {
       stopWatching();

@@ -18,12 +18,17 @@ const shiftJisLike: Codec & { readonly calls: string[] } = {
 describe("runWithHookFiles", () => {
   it("encodes the buffer and decodes the result with the document's encoding, so non-UTF-8 sources round-trip", async () => {
     shiftJisLike.calls.length = 0;
-    const output = await runWithHookFiles("class a {}", "shiftjis", shiftJisLike, async (files) => {
-      expect(await readFile(files.stdin, "utf8")).toBe("CLASS A {}");
-      await writeFile(files.stdout, "CLASS A {}\n");
-      await writeFile(files.stderr, "IS DIRTY\n");
-      return { exitCode: 0, log: "ran" };
-    });
+    const output = await runWithHookFiles(
+      "class a {}",
+      "shiftjis",
+      shiftJisLike,
+      async (hookFiles) => {
+        expect(await readFile(hookFiles.stdin, "utf8")).toBe("CLASS A {}");
+        await writeFile(hookFiles.stdout, "CLASS A {}\n");
+        await writeFile(hookFiles.stderr, "IS DIRTY\n");
+        return { exitCode: 0, log: "ran" };
+      },
+    );
     expect(output).toEqual({
       exitCode: 0,
       log: "ran",
@@ -44,8 +49,8 @@ describe("runWithHookFiles", () => {
   it("deletes the temporary files even when the build throws, so unsaved source does not pile up in the temp directory", async () => {
     let stdin = "";
     await expect(
-      runWithHookFiles("secret", "utf8", shiftJisLike, (files) => {
-        stdin = files.stdin;
+      runWithHookFiles("secret", "utf8", shiftJisLike, (hookFiles) => {
+        stdin = hookFiles.stdin;
         return Promise.reject(new Error("spawn mvn ENOENT"));
       }),
     ).rejects.toThrow("ENOENT");

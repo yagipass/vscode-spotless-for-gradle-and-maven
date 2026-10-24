@@ -15,11 +15,11 @@ const notInReactor = "Could not find the selected project in the reactor";
 
 export function findMavenExecutable(
   root: string,
-  configured: string,
+  configuredExecutable: string,
   searchPath: string,
 ): string | undefined {
-  if (configured !== "") {
-    return configured;
+  if (configuredExecutable !== "") {
+    return configuredExecutable;
   }
   const onPath = (name: string) =>
     searchPath
@@ -34,8 +34,8 @@ export function findMavenExecutable(
 export function mavenArgs(
   build: MavenBuild,
   file: string,
-  extensionJar: string,
   hookFiles: HookFiles,
+  extensionJar: string,
 ): string[] {
   const module = path.relative(build.root, build.module);
   const properties = [
@@ -74,11 +74,11 @@ export async function runMaven(
     );
   }
   const run = async (target: MavenBuild): Promise<BuildResult> => {
-    const args = mavenArgs(target, request.file, options.extensionJar, request.hookFiles);
+    const args = mavenArgs(target, request.file, request.hookFiles, options.extensionJar);
     const result = await runProcess(executable, args, target.root, request.signal);
     return {
       exitCode: result.exitCode,
-      log: [executable, ...args].join(" ") + "\n" + result.output,
+      log: [executable, ...args].join(" ") + "\n" + result.log,
     };
   };
   const reactor = await run(build);
@@ -100,7 +100,7 @@ function runProcess(
   args: string[],
   cwd: string,
   signal: AbortSignal,
-): Promise<{ exitCode: number; output: string }> {
+): Promise<BuildResult> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
     const [command, commandArgs] = windows
@@ -132,9 +132,9 @@ function runProcess(
       }
     };
     signal.addEventListener("abort", interrupt, { once: true });
-    const output: Buffer[] = [];
-    child.stdout.on("data", (chunk: Buffer) => output.push(chunk));
-    child.stderr.on("data", (chunk: Buffer) => output.push(chunk));
+    const chunks: Buffer[] = [];
+    child.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => chunks.push(chunk));
     child.on("error", (error) => {
       signal.removeEventListener("abort", interrupt);
       reject(error);
@@ -147,7 +147,7 @@ function runProcess(
       }
       resolve({
         exitCode: code ?? 1,
-        output: Buffer.concat(output).toString("utf8"),
+        log: Buffer.concat(chunks).toString("utf8"),
       });
     });
   });
