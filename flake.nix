@@ -151,7 +151,7 @@
             ]
             ++ config.pre-commit.settings.enabledPackages;
 
-            shellHook = config.pre-commit.installationScript;
+            shellHook = config.pre-commit.shellHook;
 
             env = {
               JAVA_HOME = "${jdk.home}";
