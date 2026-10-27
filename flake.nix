@@ -138,7 +138,13 @@
               };
             };
 
-            actionlint.enable = true;
+            jactionlint = {
+              enable = true;
+              name = "jactionlint";
+              package = pkgs.jactionlint;
+              entry = "${lib.getExe pkgs.jactionlint} --shellcheck=${lib.getExe pkgs.shellcheck} --pyflakes=${lib.getExe pkgs.python3Packages.pyflakes}";
+              files = "^\\.github/(workflows/([^/]+\\.ya?ml|actions\\.lock)|dependabot\\.ya?ml)$";
+            };
           };
 
           devShells.default = pkgs.mkShell {
