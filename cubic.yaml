@@ -20,3 +20,4 @@ reviews:
 
 pr_descriptions:
   generate: false
+  cubic_review_link: false
