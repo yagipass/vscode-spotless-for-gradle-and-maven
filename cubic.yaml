@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://cubic.dev/schema/cubic-repository-config.schema.json
+version: 1
+
+reviews:
+  external_contributors_require_manual_review: true
+  ignore:
+    files:
+      - pnpm-lock.yaml
+      - flake.lock
+      - .github/workflows/actions.lock
+      - CHANGELOG.md
+    head_branches:
+      - "dependabot/**"
+    pr_titles:
+      - "Release for v*"
+  custom_rules:
+    - name: Contributing guide
+      file_paths:
+        - CONTRIBUTING.md
+
+pr_descriptions:
+  generate: false
+  cubic_review_link: false
