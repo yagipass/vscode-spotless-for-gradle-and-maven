@@ -1,10 +1,12 @@
-# Security Policy
+# Security
 
 ## Reporting a vulnerability
 
 Report vulnerabilities privately through [GitHub's private vulnerability reporting](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/security/advisories/new). Do not open a public issue.
 
-Only the latest release receives fixes.
+## Supported versions
+
+Only the latest release receives security fixes.
 
 ## Scope
 
