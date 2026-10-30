@@ -58,7 +58,7 @@ Merge the release pull request that [tagpr](https://github.com/Songmu/tagpr) kee
 
 tagpr writes `CHANGELOG.md` and the version in `package.json`, so do not edit them by hand.
 
-This needs Actions to be allowed to create pull requests, and an environment `marketplace` with the secrets `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` of the Microsoft Entra identity that publishes to the VS Marketplace. Open VSX is published with trusted publishing, without a token.
+This needs the "Allow GitHub Actions to create and approve pull requests" setting, which `.github/infra.yml` turns on, and an environment `marketplace` with the secrets `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` of the Microsoft Entra identity that publishes to the VS Marketplace. Open VSX is published with trusted publishing, without a token.
 
 ## Repository settings
 
