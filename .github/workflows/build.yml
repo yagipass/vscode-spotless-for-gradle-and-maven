@@ -25,12 +25,14 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: cachix/install-nix-action@v31.11.2
       - uses: nix-community/cache-nix-action@v7.0.2
         with:
           primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
       - run: nix flake check -L
         shell: bash
+      - run: gitleaks git --redact --verbose
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck

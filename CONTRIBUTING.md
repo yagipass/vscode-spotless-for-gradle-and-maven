@@ -36,6 +36,7 @@ CI runs the integration tests on Linux, macOS and Windows, and on Linux also wit
 
 - `pnpm lint` fails on any oxlint warning and on files that oxfmt would change. `pnpm exec oxfmt` formats them.
 - `nix flake check` fails on Markdown that markdownlint or typos rejects.
+- CI fails on a secret that gitleaks finds in any commit, with the exceptions in `.gitleaks.toml`.
 - Commit messages follow Conventional Commits, checked by the `commit-msg` hook.
 - Name branches `<type>/<slug>` after the Conventional Commits type. `.github/labeler.yml` labels the pull request by it, `feat/` as `enhancement`, `fix/` as `bug`, and `docs/` as `documentation`, and `.github/release.yml` groups the changelog by these labels and Dependabot's `dependencies`.
 
