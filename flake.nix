@@ -78,37 +78,30 @@
         {
           treefmt = {
             projectRootFile = "flake.nix";
+            flakeCheck = false;
             programs.nixfmt.enable = true;
           };
 
           pre-commit.settings.hooks = {
-            treefmt = {
-              enable = true;
-              package = config.treefmt.build.wrapper;
-            };
+            treefmt.enable = true;
 
-            gitleaks = {
-              enable = true;
-              entry = "${pkgs.writeShellScript "gitleaks-files" ''
-                status=0
-                for file in "$@"; do
-                  ${pkgs.gitleaks}/bin/gitleaks dir --config .gitleaks.toml --redact --verbose --no-banner --log-level warn "$file" || status=1
-                done
-                exit $status
-              ''}";
-              args = [ ];
-              pass_filenames = true;
-            };
+            gitleaks.enable = true;
 
             convco.enable = true;
 
             end-of-file-fixer = {
               enable = true;
-              excludes = [ fixtures ];
+              excludes = [
+                "^CHANGELOG\\.md$"
+                fixtures
+              ];
             };
             trim-trailing-whitespace = {
               enable = true;
-              excludes = [ fixtures ];
+              excludes = [
+                "^CHANGELOG\\.md$"
+                fixtures
+              ];
             };
             check-merge-conflicts = {
               enable = true;
@@ -124,6 +117,7 @@
             typos = {
               enable = true;
               files = "\\.md$";
+              excludes = [ "^CHANGELOG\\.md$" ];
             };
             markdownlint = {
               enable = true;
@@ -140,16 +134,16 @@
 
             jactionlint = {
               enable = true;
-              name = "jactionlint";
               package = pkgs.jactionlint;
               entry = "${lib.getExe pkgs.jactionlint} --shellcheck=${lib.getExe pkgs.shellcheck} --pyflakes=${lib.getExe pkgs.python3Packages.pyflakes}";
-              files = "^\\.github/(workflows/([^/]+\\.ya?ml|actions\\.lock)|dependabot\\.ya?ml)$";
+              files = "^\\.github/|(^|/)action\\.ya?ml$";
+              pass_filenames = false;
             };
           };
 
-          devShells.default = pkgs.mkShell {
+          devShells.default = pkgs.mkShellNoCC {
             packages = [
-              pkgs.nodejs_24
+              pkgs.nodejs_26
               pkgs.pnpm
               jdk
               (pkgs.maven.override { jdk_headless = jdk; })

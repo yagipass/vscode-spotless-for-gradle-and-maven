@@ -4,7 +4,7 @@
 
 Run `nix develop` (or `direnv allow`). It provides every tool and installs the git hooks.
 
-Without Nix, install Node.js 24, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. The git hooks are then not installed.
+Without Nix, install Node.js 26, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. The git hooks are then not installed.
 
 Then, with or without Nix, run `pnpm install`.
 
@@ -35,7 +35,8 @@ CI runs the integration tests on Linux, macOS and Windows, and on Linux also wit
 ## Rules
 
 - `pnpm lint` fails on any oxlint warning and on files that oxfmt would change. `pnpm exec oxfmt` formats them.
-- `nix flake check` fails on Markdown that markdownlint or typos rejects.
+- `nix flake check` fails on Markdown that markdownlint or typos rejects. Both skip `CHANGELOG.md`, which tagpr writes.
+- CI fails on a secret that gitleaks finds in any commit, with the exceptions in `.gitleaks.toml`.
 - Commit messages follow Conventional Commits, checked by the `commit-msg` hook.
 - Name branches `<type>/<slug>` after the Conventional Commits type. `.github/labeler.yml` labels the pull request by it, `feat/` as `enhancement`, `fix/` as `bug`, and `docs/` as `documentation`, and `.github/release.yml` groups the changelog by these labels and Dependabot's `dependencies`.
 
