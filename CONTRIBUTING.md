@@ -4,7 +4,7 @@
 
 Run `nix develop` (or `direnv allow`). It provides every tool and installs the git hooks.
 
-Without Nix, install Node.js 24, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. The git hooks are then not installed.
+Without Nix, install Node.js 26, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. The git hooks are then not installed.
 
 Then, with or without Nix, run `pnpm install`.
 
