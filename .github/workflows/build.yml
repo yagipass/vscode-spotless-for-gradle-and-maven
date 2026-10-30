@@ -32,7 +32,10 @@ jobs:
           primary-key: nix-checks-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
       - run: nix flake check -L
         shell: bash
-      - run: gitleaks git --redact --verbose
+      - run: |
+          opts=(--full-history --all --diff-filter=tuxdb --diff-merges=first-parent)
+          git log "${opts[@]}" -1 > /dev/null
+          gitleaks git --log-opts="${opts[*]}" --redact --verbose
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
