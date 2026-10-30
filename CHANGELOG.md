@@ -1,5 +1,23 @@
 # Changelog
 
+## [v1.0.3](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.2...v1.0.3) - 2026-10-30
+
+### Dependencies
+- build(deps): bump Songmu/tagpr from 1.21.2 to 1.21.3 in the actions group by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/147
+- build(deps-dev): bump org.eclipse.sisu:sisu-maven-plugin from 1.1.0 to 1.1.1 in /inject/maven by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/144
+- build(deps-dev): bump vitest from 5.0.4 to 5.0.5 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/146
+- build(deps-dev): bump oxlint from 1.88.0 to 1.89.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/145
+- build(deps-dev): bump ovsx from 1.2.0 to 1.3.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/149
+- build(deps-dev): bump oxfmt from 0.73.0 to 0.74.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/148
+### Other Changes
+- build: configure CodeRabbit reviews for this repository by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/134
+- build: put the pre-commit command on PATH in the dev shell by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/137
+- build: lint the workflows with jactionlint instead of actionlint by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/139
+- build: configure cubic reviews for this repository by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/141
+- build: stop CodeRabbit from writing summaries into pull request bodies by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/143
+- docs: add rules, change proposals, and release steps to the guide by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/151
+- build: scan every commit for secrets and tidy the Nix checks and CI caches by @yagipass in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/153
+
 ## [v1.0.2](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.1...v1.0.2) - 2026-10-24
 
 ### Bug Fixes
