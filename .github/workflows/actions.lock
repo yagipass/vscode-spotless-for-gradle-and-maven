@@ -12,7 +12,7 @@ workflows:
         - 'cachix/install-nix-action@v31.11.2'
         - 'nix-community/cache-nix-action@v7.0.2'
         - 'pnpm/action-setup@v6.1.0'
-        - 'songmu/tagpr@v1.21.2'
+        - 'songmu/tagpr@v1.21.3'
     '.github/workflows/gradle-for-java.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/upload-artifact@v7.0.2'
@@ -66,8 +66,8 @@ dependencies:
         commit: 'sha1-ea17c68df8912ef543352723c149a84f56e3d413'
         owner_id: 21320719
         repo_id: 262289747
-    'songmu/tagpr@v1.21.2':
-        ref: 'v1.21.2'
-        commit: 'sha1-0c4eb5a3b0862693702acea436a7c68bd586530d'
+    'songmu/tagpr@v1.21.3':
+        ref: 'v1.21.3'
+        commit: 'sha1-1fcd7292d1fe8ea9a8313eef46b8d80b7a15d227'
         owner_id: 177122
         repo_id: 524603982
