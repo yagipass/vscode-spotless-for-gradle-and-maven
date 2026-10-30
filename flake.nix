@@ -81,6 +81,8 @@
             programs.nixfmt.enable = true;
           };
 
+          pre-commit.settings.excludes = [ "^CHANGELOG\\.md$" ];
+
           pre-commit.settings.hooks = {
             treefmt = {
               enable = true;
@@ -116,7 +118,6 @@
             };
             markdownlint = {
               enable = true;
-              excludes = [ "^CHANGELOG\\.md$" ];
               settings.configuration = {
                 default = true;
                 MD013 = false;
