@@ -28,7 +28,7 @@ jobs:
       - uses: cachix/install-nix-action@v31.11.2
       - uses: nix-community/cache-nix-action@v7.0.2
         with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.nix', 'flake.lock') }}
+          primary-key: nix-gradle-for-java-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
       - run: pnpm install --frozen-lockfile
       - run: |
           version=$(node scripts/newest-gradle-for-java.mjs "$CHANNEL")
