@@ -2,9 +2,11 @@
 
 ## Setup
 
-Run `nix develop` (or `direnv allow`). It provides every tool and installs the git hooks. Then run `pnpm install`.
+Run `nix develop` (or `direnv allow`). It provides every tool and installs the git hooks.
 
 Without Nix, install Node.js 24, pnpm, JDK 21 and Maven; `pnpm test:integration` names any further JDK or mvnd it needs. The git hooks are then not installed.
+
+Then, with or without Nix, run `pnpm install`.
 
 ## Build and test
 
@@ -43,8 +45,8 @@ Open an issue before you start on a new feature or a change in behavior, with th
 
 A pull request:
 
-- references its issue (`Closes #N`).
-- adds tests in `test/unit` or `test/integration`. A bug fix adds a test that reproduces the bug.
+- references its issue (`Closes #N`), if it has one.
+- adds tests in `test/unit` or `test/integration` when it changes behavior. A bug fix adds a test that reproduces the bug.
 - passes `pnpm lint`, `pnpm typecheck`, `pnpm sync:runtime-types`, `pnpm test:unit`, `pnpm test:integration` and `nix flake check`.
 - has a Conventional Commits title. Pull requests are squash-merged, so the title becomes the commit on `main`.
 
