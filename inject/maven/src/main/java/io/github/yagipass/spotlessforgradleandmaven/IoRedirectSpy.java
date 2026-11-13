@@ -35,12 +35,16 @@ public class IoRedirectSpy extends AbstractEventSpy {
     ExecutionEvent executionEvent = (ExecutionEvent) event;
     if (executionEvent.getType() == ExecutionEvent.Type.SessionEnded) {
       restore();
-      return;
+    } else if (isSpotless(executionEvent.getMojoExecution())) {
+      onSpotlessEvent(executionEvent);
     }
-    MojoExecution mojo = executionEvent.getMojoExecution();
-    if (mojo == null || !"spotless-maven-plugin".equals(mojo.getArtifactId())) {
-      return;
-    }
+  }
+
+  private static boolean isSpotless(MojoExecution mojo) {
+    return mojo != null && "spotless-maven-plugin".equals(mojo.getArtifactId());
+  }
+
+  private void onSpotlessEvent(ExecutionEvent executionEvent) {
     Properties properties = executionEvent.getSession().getUserProperties();
     String stdinPath = properties.getProperty(PropertyNames.STDIN);
     String stdoutPath = properties.getProperty(PropertyNames.STDOUT);
