@@ -26,7 +26,7 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: cachix/install-nix-action@v31.11.3
+      - uses: cachix/install-nix-action@v31.11.5
       - uses: nix-community/cache-nix-action@v7.0.2
         with:
           primary-key: nix-checks-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
@@ -62,7 +62,7 @@ jobs:
         with:
           persist-credentials: false
       - if: runner.os != 'Windows'
-        uses: cachix/install-nix-action@v31.11.3
+        uses: cachix/install-nix-action@v31.11.5
       - if: runner.os != 'Windows'
         uses: nix-community/cache-nix-action@v7.0.2
         with:
@@ -138,7 +138,7 @@ jobs:
         with:
           ref: ${{ needs.tagpr.outputs.tag }}
           persist-credentials: false
-      - uses: cachix/install-nix-action@v31.11.3
+      - uses: cachix/install-nix-action@v31.11.5
       - run: test "v$(node -p 'require("./package.json").version')" = "$TAG"
       - run: pnpm install --frozen-lockfile
       - run: pnpm package
