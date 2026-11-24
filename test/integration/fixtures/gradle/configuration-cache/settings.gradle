@@ -1,0 +1,2 @@
+rootProject.name = 'configuration-cache'
+include 'api', 'app'
