@@ -64,3 +64,8 @@ suite("Gradle build with Isolated Projects", () => {
   test("formats a subproject file even though Isolated Projects forces the configuration cache on and runs another subproject's Spotless task in parallel", () =>
     expectFormattedOnSave(sourceDir("isolated", "app"), "TmpIsolated"));
 });
+
+suite("Gradle build with the configuration cache", () => {
+  test("formats a subproject file even though the configuration cache runs another subproject's non-Spotless task, which prints and resets the standard streams, at the same time", () =>
+    expectFormattedOnSave(sourceDir("configuration-cache", "app"), "TmpConfigurationCache"));
+});
