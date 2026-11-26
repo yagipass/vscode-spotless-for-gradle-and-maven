@@ -5,7 +5,7 @@ version: 'v0.0.3'
 workflows:
     '.github/workflows/build.yml':
         - 'actions/checkout@v7.0.1'
-        - 'actions/setup-java@v6.2.0'
+        - 'actions/setup-java@v6.3.0'
         - 'actions/setup-node@v7.1.0'
         - 'actions/upload-artifact@v7.0.2'
         - 'azure/login@v3.1.0'
@@ -31,9 +31,9 @@ dependencies:
         commit: 'sha1-bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13'
         owner_id: 44036562
         repo_id: 177139928
-    'actions/setup-java@v6.2.0':
-        ref: 'v6.2.0'
-        commit: 'sha1-77dd5b2ce225ea11469928ac317850245a74ae78'
+    'actions/setup-java@v6.3.0':
+        ref: 'v6.3.0'
+        commit: 'sha1-d1374f8ac74474200d16ef8ecee22c7ae7a51880'
         owner_id: 44036562
         repo_id: 196057608
     'actions/setup-node@v7.1.0':
