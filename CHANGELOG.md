@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.0.4](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.3...v1.0.4) - 2026-11-27
+
+### Dependencies
+- build(deps): bump org.apache.maven:maven-core from 3.10.1 to 3.10.2 in /inject/maven by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/185
+- build(deps): bump actions/setup-java from 6.2.0 to 6.3.0 in the actions group by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/187
+- build(deps-dev): bump @vscode/vsce from 4.1.0 to 4.1.1 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/190
+- build(deps-dev): bump vitest from 5.1.0 to 5.1.1 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/189
+- build(deps-dev): bump oxfmt from 0.78.0 to 0.79.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/188
+- build(deps-dev): bump oxlint from 1.93.0 to 1.94.0 by @dependabot[bot] in https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/pull/186
+
 ## [v1.0.3](https://github.com/yagipass/vscode-spotless-for-gradle-and-maven/compare/v1.0.2...v1.0.3) - 2026-11-24
 
 ### Bug Fixes
